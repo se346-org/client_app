@@ -1,4 +1,4 @@
-## Bài tập 1
+## Client app chat websocket
 
 ## Hướng dẫn chạy dự án
 
@@ -27,8 +27,3 @@
    ```
 
 ### Thử nghiệm dự án
-
-- Sử dụng thông tin đăng nhập sau để thử nghiệm:
-  - Account test: `{ "username": "admin", "password": "123456" }, { "username": "user", "password": "123456" }`
-
-Khi bạn nhập đúng thông tin đăng nhập, bạn sẽ được chuyển đến màn hình chào mừng.
