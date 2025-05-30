@@ -9,7 +9,6 @@ class LoginService {
   async login(data: LoginRequest): Promise<LoginResponse> {
     try {
       console.log("Attempting login with:", { email: data.email });
-      console.log("API URL:", `${API_CONFIG.BASE_URL}/auth/login`);
 
       const loginData = await HttpService.post<LoginResponse>(
         "/user/login",

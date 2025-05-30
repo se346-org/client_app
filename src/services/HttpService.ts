@@ -1,136 +1,141 @@
-import LoginService from "./LoginService";
-import { API_CONFIG } from "../config";
+import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import * as SecureStore from "expo-secure-store";
+import { TOKEN_KEY } from "./LoginService";
+
+const BASE_URL = "http://localhost:8080";
 
 class HttpService {
-  private async getHeaders(): Promise<Headers> {
-    const headers = new Headers(API_CONFIG.HEADERS);
+  private static instance: HttpService;
+  private token: string | null = null;
 
-    const token = await LoginService.getToken();
-    if (token) {
-      headers.append("Authorization", `Bearer ${token}`);
-    }
-
-    return headers;
+  private constructor() {
+    this.setupAxiosInterceptors();
   }
 
-  async get<T>(endpoint: string): Promise<T> {
-    const headers = await this.getHeaders();
-    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
-    console.log("GET Request:", url);
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers,
-    });
-
-    if (!response.ok) {
-      console.error("GET Error:", {
-        status: response.status,
-        statusText: response.statusText,
-        url,
-      });
-      if (response.status === 401) {
-        await LoginService.logout();
-        throw new Error("Session expired");
-      }
-      const errorData = await response.json();
-      throw new Error(errorData.message || "An error occurred");
+  public static getInstance(): HttpService {
+    if (!HttpService.instance) {
+      HttpService.instance = new HttpService();
     }
-
-    return response.json();
+    return HttpService.instance;
   }
 
-  async post<T>(endpoint: string, data: any): Promise<T> {
-    const headers = await this.getHeaders();
-
-    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
-    console.log("POST Request:", {
-      url,
-      data,
-      headers:
-        endpoint === "/user/login" ? {} : Object.fromEntries(headers.entries()),
-    });
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      console.error("POST Error:", {
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        data,
-      });
-      if (response.status === 401) {
-        await LoginService.logout();
-        throw new Error("Session expired");
+  private setupAxiosInterceptors() {
+    axios.interceptors.request.use(
+      async (config) => {
+        if (!this.token) {
+          this.token = await SecureStore.getItemAsync(TOKEN_KEY);
+        }
+        if (this.token) {
+          config.headers = new axios.AxiosHeaders({
+            ...config.headers,
+            Authorization: `Bearer ${this.token}`,
+          });
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
       }
-      const errorData = await response.json();
-      throw new Error(errorData.message || "An error occurred");
-    }
+    );
 
-    const responseData = await response.json();
-    console.log("POST Response:", responseData);
-    return responseData;
+    axios.interceptors.response.use(
+      (response) => response,
+      async (error: AxiosError) => {
+        if (error.response?.status === 401) {
+          // Handle token expiration
+          await this.handleTokenExpiration();
+        }
+        return Promise.reject(this.handleError(error));
+      }
+    );
   }
 
-  async put<T>(endpoint: string, data: any): Promise<T> {
-    const headers = await this.getHeaders();
-    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
-    console.log("PUT Request:", url);
-
-    const response = await fetch(url, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      console.error("PUT Error:", {
-        status: response.status,
-        statusText: response.statusText,
-        url,
-      });
-      if (response.status === 401) {
-        await LoginService.logout();
-        throw new Error("Session expired");
-      }
-      const errorData = await response.json();
-      throw new Error(errorData.message || "An error occurred");
-    }
-
-    return response.json();
+  private async handleTokenExpiration() {
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    this.token = null;
+    // You might want to navigate to login screen here
+    // or use a navigation service to handle this
   }
 
-  async delete<T>(endpoint: string): Promise<T> {
-    const headers = await this.getHeaders();
-    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
-    console.log("DELETE Request:", url);
-
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers,
-    });
-
-    if (!response.ok) {
-      console.error("DELETE Error:", {
-        status: response.status,
-        statusText: response.statusText,
-        url,
-      });
-      if (response.status === 401) {
-        await LoginService.logout();
-        throw new Error("Session expired");
-      }
-      const errorData = await response.json();
-      throw new Error(errorData.message || "An error occurred");
+  private handleError(error: AxiosError): Error {
+    if (!error.response) {
+      // Network error
+      return new Error(
+        "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn."
+      );
     }
 
-    return response.json();
+    const status = error.response.status;
+    const data = error.response.data as any;
+
+    switch (status) {
+      case 400:
+        return new Error(data.message || "Yêu cầu không hợp lệ");
+      case 401:
+        return new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      case 403:
+        return new Error("Bạn không có quyền thực hiện hành động này");
+      case 404:
+        return new Error("Không tìm thấy tài nguyên");
+      case 500:
+        return new Error("Lỗi máy chủ. Vui lòng thử lại sau");
+      default:
+        return new Error(data.message || "Đã xảy ra lỗi");
+    }
+  }
+
+  async get<T>(
+    url: string,
+    params?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    try {
+      const response = await axios.get<T>(`${BASE_URL}${url}`, {
+        ...config,
+        params,
+      });
+      console.log("response", response);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async post<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    try {
+      const response = await axios.post<T>(`${BASE_URL}${url}`, data, config);
+
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async put<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    try {
+      const response = await axios.put<T>(`${BASE_URL}${url}`, data, config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    try {
+      const response = await axios.delete<T>(`${BASE_URL}${url}`, config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
   }
 }
 
-export default new HttpService();
+export default HttpService.getInstance();
