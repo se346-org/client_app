@@ -11,27 +11,37 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useForm, Controller } from 'react-hook-form';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import LoginService from '../services/LoginService';
 
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
 const LoginScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', t('validation.required', { field: t('common.email') }));
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
+  const onSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true);
-      await LoginService.login({ email, password });
+      await LoginService.login(data);
       navigation.reset({
         index: 0,
         routes: [{ name: 'Main' }],
@@ -64,23 +74,54 @@ const LoginScreen = ({ navigation }: any) => {
           </View>
 
           <View style={styles.form}>
-            <Input
-              icon="email"
-              placeholder={t('common.email')}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
+            <Controller
+              control={control}
+              name="email"
+              rules={{
+                required: 'Email is required',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Invalid email address'
+                }
+              }}
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  name="email"
+                  control={control}
+                  rules={{
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address'
+                    }
+                  }}
+                  icon="email"
+                  placeholder="Enter your email"
+                />
+              )}
             />
 
-            <Input
-              icon="lock"
-              placeholder={t('common.password')}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              rightIcon={showPassword ? 'visibility' : 'visibility-off'}
-              onRightIconPress={() => setShowPassword(!showPassword)}
+            <Controller
+              control={control}
+              name="password"
+              rules={{
+                required: t('validation.required', { field: t('common.password') }),
+                minLength: {
+                  value: 6,
+                  message: t('validation.minLength', { field: t('common.password'), min: 6 }),
+                },
+              }}
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  name="password"
+                  control={control}
+                  icon="lock"
+                  placeholder={t('common.password')}
+                  secureTextEntry={!showPassword}
+                  rightIcon={showPassword ? 'visibility' : 'visibility-off'}
+                  onRightIconPress={() => setShowPassword(!showPassword)}
+                />
+              )}
             />
 
             <TouchableOpacity
@@ -92,7 +133,7 @@ const LoginScreen = ({ navigation }: any) => {
 
             <Button
               title={t('common.signIn')}
-              onPress={handleLogin}
+              onPress={handleSubmit(onSubmit)}
               icon="login"
               loading={loading}
             />
