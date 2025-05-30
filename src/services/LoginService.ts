@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import HttpService from "./HttpService";
 import { API_CONFIG } from "../config";
 
-const TOKEN_KEY = "auth_token";
+export const TOKEN_KEY = "auth_token";
 
 class LoginService {
   async login(data: LoginRequest): Promise<LoginResponse> {

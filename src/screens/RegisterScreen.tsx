@@ -15,6 +15,7 @@ import { useForm, Controller } from 'react-hook-form';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import RegisterService from '../services/RegisterService';
 
 interface RegisterFormData {
   fullName: string;
@@ -48,8 +49,13 @@ const RegisterScreen = ({ navigation }: any) => {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setLoading(true);
-      // TODO: Implement register logic
-      console.log('Register data:', data);
+      RegisterService.register({
+        full_name: data.fullName,
+        avatar: '',
+        email: data.email,
+        password: data.password,
+      })
+
       navigation.navigate('Login');
     } catch (error) {
       if (error instanceof Error) {
