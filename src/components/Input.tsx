@@ -55,6 +55,7 @@ const Input = <T extends FieldValues>({
               onChangeText={onChange}
               onBlur={onBlur}
               value={value}
+              autoCapitalize="none"
               {...props}
             />
             {rightIcon && (

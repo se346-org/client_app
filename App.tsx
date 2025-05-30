@@ -3,11 +3,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import ConversationScreen from './src/screens/ConversationScreen';
 import ContactScreen from './src/screens/ContactScreen';
+import AccountScreen from './src/screens/AccountScreen';
 import './src/i18n';
 
 export type RootStackParamList = {
@@ -32,15 +33,19 @@ const MainTabs = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
+          let iconName: keyof typeof MaterialIcons.glyphMap;
 
           if (route.name === 'Conversations') {
             iconName = 'chat';
           } else if (route.name === 'Contacts') {
             iconName = 'people';
+          } else if (route.name === 'Account') {
+            iconName = 'person';
+          } else {
+            iconName = 'home';
           }
 
-          return <Icon name={iconName} size={size} color={color} />;
+          return <MaterialIcons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#666',
@@ -59,6 +64,13 @@ const MainTabs = () => {
         component={ContactScreen}
         options={{
           title: 'Contacts',
+        }}
+      />
+      <Tab.Screen 
+        name="Account" 
+        component={AccountScreen}
+        options={{
+          title: 'Account',
         }}
       />
     </Tab.Navigator>

@@ -42,11 +42,13 @@ class HttpService {
 
   async post<T>(endpoint: string, data: any): Promise<T> {
     const headers = await this.getHeaders();
+
     const url = `${API_CONFIG.BASE_URL}${endpoint}`;
     console.log("POST Request:", {
       url,
       data,
-      headers: Object.fromEntries(headers.entries()),
+      headers:
+        endpoint === "/user/login" ? {} : Object.fromEntries(headers.entries()),
     });
 
     const response = await fetch(url, {
