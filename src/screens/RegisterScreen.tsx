@@ -1,55 +1,38 @@
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
+  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Image,
+  ScrollView,
+  Alert,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { RootStackParamList } from '../../App';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import Input from '../components/Input';
+import Button from '../components/Button';
 
-type RegisterScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Register'>;
-};
-
-const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
+const RegisterScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
-  const [avatar, setAvatar] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      alert('Sorry, we need camera roll permissions to make this work!');
+  const handleRegister = () => {
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('Error', t('validation.required', { field: t('common.email') }));
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setAvatar(result.assets[0].uri);
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
     }
-  };
 
-  const handleRegister = async () => {
-    // TODO: Implement registration logic
-    console.log('Register with:', { email, fullName, password, avatar });
+    // TODO: Implement register logic
+    console.log('Register:', { email, password });
   };
 
   return (
@@ -58,77 +41,55 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
       >
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Register</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollView}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Text style={styles.title}>{t('common.signUp')}</Text>
+            <Text style={styles.subtitle}>{t('common.createAccount')}</Text>
+          </View>
 
-          <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
-            {avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Icon name="add-a-photo" size={40} color="#666" />
-                <Text style={styles.avatarPlaceholderText}>Add Photo</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.inputContainer}>
-            <Icon name="email" size={24} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
+          <View style={styles.form}>
+            <Input
+              icon="email"
+              placeholder={t('common.email')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
             />
-          </View>
 
-          <View style={styles.inputContainer}>
-            <Icon name="person" size={24} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              value={fullName}
-              onChangeText={setFullName}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Icon name="lock" size={24} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
+            <Input
+              icon="lock"
+              placeholder={t('common.password')}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry={!showPassword}
+              secureTextEntry
             />
-            <TouchableOpacity
-              style={styles.showPasswordButton}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Icon 
-                name={showPassword ? "visibility" : "visibility-off"} 
-                size={24} 
-                color="#666" 
-              />
-            </TouchableOpacity>
+
+            <Input
+              icon="lock"
+              placeholder={t('common.confirmPassword')}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+            />
+
+            <Button
+              title={t('common.signUp')}
+              onPress={handleRegister}
+              icon="person-add"
+            />
+
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>{t('common.haveAccount')} </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.loginLink}>{t('common.signIn')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleRegister}>
-            <Icon name="person-add" size={24} color="#fff" style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Register</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.loginLink}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={styles.loginText}>
-              Already have an account? Login here
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -142,83 +103,40 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
   },
-  formContainer: {
-    flex: 1,
+  scrollView: {
+    flexGrow: 1,
     padding: 20,
-    justifyContent: 'center',
+  },
+  header: {
+    marginTop: 40,
+    marginBottom: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
+    color: '#000',
+    marginBottom: 10,
   },
-  avatarContainer: {
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#e1e1e1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarPlaceholderText: {
+  subtitle: {
+    fontSize: 16,
     color: '#666',
-    fontSize: 16,
-    marginTop: 5,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
+  form: {
     flex: 1,
-    height: 50,
-    fontSize: 16,
   },
-  showPasswordButton: {
-    padding: 10,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    height: 50,
-    borderRadius: 8,
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonIcon: {
-    marginRight: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  loginLink: {
     marginTop: 20,
-    alignItems: 'center',
   },
   loginText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  loginLink: {
     color: '#007AFF',
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
 

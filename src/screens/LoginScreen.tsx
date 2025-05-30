@@ -10,24 +10,46 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import Input from '../components/Input';
-import TouchableButton from '../components/TouchableButton';
+import Button from '../components/Button';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import LoginService from '../services/LoginService';
 
 const LoginScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', t('validation.required', { field: t('common.email') }));
       return;
     }
-    // TODO: Implement login logic
-    console.log('Login:', { email, password });
+
+    try {
+      setLoading(true);
+      await LoginService.login({ email, password });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <LanguageSwitcher />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
@@ -37,14 +59,14 @@ const LoginScreen = ({ navigation }: any) => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
+            <Text style={styles.title}>{t('common.welcome')}</Text>
+            <Text style={styles.subtitle}>{t('common.continue')}</Text>
           </View>
 
           <View style={styles.form}>
             <Input
               icon="email"
-              placeholder="Email"
+              placeholder={t('common.email')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -53,28 +75,32 @@ const LoginScreen = ({ navigation }: any) => {
 
             <Input
               icon="lock"
-              placeholder="Password"
+              placeholder={t('common.password')}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
+              rightIcon={showPassword ? 'visibility' : 'visibility-off'}
+              onRightIconPress={() => setShowPassword(!showPassword)}
             />
 
             <TouchableOpacity
               style={styles.forgotPassword}
               onPress={() => navigation.navigate('ForgotPassword')}
             >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              <Text style={styles.forgotPasswordText}>{t('common.forgotPassword')}</Text>
             </TouchableOpacity>
 
-            <TouchableButton
-              title="Sign In"
+            <Button
+              title={t('common.signIn')}
               onPress={handleLogin}
+              icon="login"
+              loading={loading}
             />
 
             <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
+              <Text style={styles.registerText}>{t('common.noAccount')} </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.registerLink}>Sign Up</Text>
+                <Text style={styles.registerLink}>{t('common.signUp')}</Text>
               </TouchableOpacity>
             </View>
           </View>

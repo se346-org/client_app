@@ -1,0 +1,17 @@
+{
+  "common": {
+    "welcome": "Chào mừng trở lại!",
+    "signIn": "Đăng nhập",
+    "signUp": "Đăng ký",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "forgotPassword": "Quên mật khẩu?",
+    "noAccount": "Chưa có tài khoản?",
+    "continue": "Đăng nhập để tiếp tục"
+  },
+  "validation": {
+    "required": "{{field}} không được để trống",
+    "invalidEmail": "Email không hợp lệ",
+    "minLength": "{{field}} phải có ít nhất {{min}} ký tự"
+  }
+} 

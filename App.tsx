@@ -1,9 +1,14 @@
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from './src/screens/LoginScreen';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import React from 'react';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import ConversationScreen from './src/screens/ConversationScreen';
+import ContactScreen from './src/screens/ContactScreen';
+import './src/i18n';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -13,9 +18,52 @@ export type RootStackParamList = {
   ToDoList: { username: string };
   CreateToDo: { username: string };
   ToDoDetail: { username: string, toDoId: string };
+  Main: undefined;
+  Chat: { conversationId: string } | { contactId: string };
+  AddContact: undefined;
+  NewChat: undefined;
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator();
+
+const MainTabs = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === 'Conversations') {
+            iconName = 'chat';
+          } else if (route.name === 'Contacts') {
+            iconName = 'people';
+          }
+
+          return <Icon name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: '#666',
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen 
+        name="Conversations" 
+        component={ConversationScreen}
+        options={{
+          title: 'Chats',
+        }}
+      />
+      <Tab.Screen 
+        name="Contacts" 
+        component={ContactScreen}
+        options={{
+          title: 'Contacts',
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 const LogoutButton = ({ navigation }: any) => (
   <TouchableOpacity 
@@ -29,17 +77,18 @@ const LogoutButton = ({ navigation }: any) => (
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen} 
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="Register" 
-          component={RegisterScreen} 
-          options={{ headerShown: false }}
-        />
+      <Stack.Navigator
+        initialRouteName="Login"
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="Chat" component={ConversationScreen} />
+        <Stack.Screen name="AddContact" component={ContactScreen} />
+        <Stack.Screen name="NewChat" component={ConversationScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

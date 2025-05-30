@@ -3,34 +3,43 @@ import {
   View,
   TextInput,
   StyleSheet,
-  ViewStyle,
-  TextStyle,
   TextInputProps,
+  TouchableOpacity,
+  Text,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-interface InputProps extends TextInputProps {
+export interface InputProps extends TextInputProps {
   icon?: string;
-  containerStyle?: ViewStyle;
-  inputStyle?: TextStyle;
+  rightIcon?: string;
+  onRightIconPress?: () => void;
   error?: string;
 }
 
-const Input: React.FC<InputProps> = ({
+const Input = ({
   icon,
-  containerStyle,
-  inputStyle,
+  rightIcon,
+  onRightIconPress,
   error,
+  style,
   ...props
-}) => {
+}: InputProps) => {
   return (
-    <View style={[styles.container, error && styles.errorContainer, containerStyle]}>
-      {icon && <Icon name={icon} size={24} color="#666" style={styles.icon} />}
+    <View style={[styles.container, error && styles.errorContainer, style]}>
+      {icon && (
+        <Icon name={icon} size={24} color="#666" style={styles.icon} />
+      )}
       <TextInput
-        style={[styles.input, inputStyle]}
-        placeholderTextColor="#999"
+        style={[styles.input, error && styles.errorInput]}
+        placeholderTextColor="#666"
         {...props}
       />
+      {rightIcon && (
+        <TouchableOpacity onPress={onRightIconPress} style={styles.rightIcon}>
+          <Icon name={rightIcon} size={24} color="#666" />
+        </TouchableOpacity>
+      )}
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
@@ -51,11 +60,22 @@ const styles = StyleSheet.create({
   icon: {
     marginRight: 10,
   },
+  rightIcon: {
+    padding: 10,
+  },
   input: {
     flex: 1,
     height: 50,
     fontSize: 16,
     color: '#000',
+  },
+  errorInput: {
+    color: '#FF3B30',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 5,
   },
 });
 
