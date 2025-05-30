@@ -1,104 +1,122 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import TabBar from '../components/TabBar';
+import { MaterialIcons } from '@expo/vector-icons';
+import ConversationService, { Conversation } from '../services/ConversationService';
+import { formatDistanceToNow } from 'date-fns';
 
-interface Conversation {
-  id: string;
-  name: string;
-  lastMessage: string;
-  timestamp: string;
-  unreadCount: number;
-  type: 'direct' | 'group';
-}
-
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    lastMessage: 'Hey, how are you?',
-    timestamp: '10:30 AM',
-    unreadCount: 2,
-    type: 'direct',
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    lastMessage: 'See you tomorrow!',
-    timestamp: 'Yesterday',
-    unreadCount: 0,
-    type: 'direct',
-  },
-  {
-    id: '3',
-    name: 'Team Meeting',
-    lastMessage: 'Alice: Let\'s discuss the project',
-    timestamp: 'Yesterday',
-    unreadCount: 5,
-    type: 'group',
-  },
-  {
-    id: '4',
-    name: 'Project Updates',
-    lastMessage: 'Bob: New features deployed',
-    timestamp: '2 days ago',
-    unreadCount: 3,
-    type: 'group',
-  },
-];
+const ITEMS_PER_PAGE = 20;
 
 const ConversationScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState(0);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-  const tabs = ['All', 'Unread', 'Groups'];
+  const getLastMessageId = useCallback(() => {
+    if (conversations.length === 0) return undefined;
+    return conversations[conversations.length - 1].last_message_id;
+  }, [conversations]);
 
-  const filteredConversations = useMemo(() => {
-    switch (activeTab) {
-      case 1: // Unread
-        return mockConversations.filter(conv => conv.unreadCount > 0);
-      case 2: // Groups
-        return mockConversations.filter(conv => conv.type === 'group');
-      default: // All
-        return mockConversations;
+  const updateConversations = useCallback((newConversations: Conversation[], shouldRefresh: boolean) => {
+    if (shouldRefresh) {
+      setConversations(newConversations);
+    } else {
+      const existingIds = new Set(conversations.map(c => c.conversation_id));
+      const uniqueNewConversations = newConversations.filter(c => !existingIds.has(c.conversation_id));
+      setConversations(prev => [...prev, ...uniqueNewConversations]);
     }
-  }, [activeTab]);
+    setHasMore(newConversations.length === ITEMS_PER_PAGE);
+  }, [conversations]);
+
+  const loadConversations = useCallback(async (shouldRefresh = false) => {
+    try {
+      const lastMessageId = shouldRefresh ? undefined : getLastMessageId();
+      const response = await ConversationService.getConversations(lastMessageId);
+      
+      if (!response?.data) {
+        setHasMore(false);
+        return;
+      }
+
+      updateConversations(response.data, shouldRefresh);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [getLastMessageId, updateConversations]);
+
+  const handleConversationPress = async (conversation: Conversation) => {
+    try {
+      await ConversationService.markAsRead(conversation.conversation_id);
+      navigation.navigate('Chat', { conversationId: conversation.conversation_id });
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+      navigation.navigate('Chat', { conversationId: conversation.conversation_id });
+    }
+  };
+
+  useEffect(() => {
+    loadConversations(true);
+  }, [loadConversations]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadConversations(true);
+  };
+
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      loadConversations(false);
+    }
+  };
 
   const renderConversation = ({ item }: { item: Conversation }) => (
     <TouchableOpacity
       style={styles.conversationItem}
-      onPress={() => navigation.navigate('Chat', { conversationId: item.id })}
+      onPress={() => handleConversationPress(item)}
     >
-      <View style={styles.avatar}>
-        <Icon 
-          name={item.type === 'group' ? 'group' : 'person'} 
-          size={24} 
-          color="#666" 
-        />
+      <View style={styles.avatarContainer}>
+        {item.avatar ? (
+          <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <MaterialIcons name="person" size={24} color="#666" />
+          </View>
+        )}
+        {item.unreadCount > 0 && (
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+          </View>
+        )}
       </View>
       <View style={styles.conversationInfo}>
         <View style={styles.conversationHeader}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.timestamp}>{item.timestamp}</Text>
-        </View>
-        <View style={styles.messageContainer}>
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage}
-          </Text>
-          {item.unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadCount}>{item.unreadCount}</Text>
-            </View>
+          <Text style={styles.name}>{item.conversation_id}</Text>
+          {item.lastMessage && (
+            <Text style={styles.time}>
+              {formatDistanceToNow(new Date(item.lastMessage.createdAt), { addSuffix: true })}
+            </Text>
           )}
         </View>
+        {item.lastMessage && (
+          <Text style={styles.lastMessage} numberOfLines={1}>
+            {item.lastMessage.content}
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -111,19 +129,25 @@ const ConversationScreen = ({ navigation }: any) => {
           style={styles.newChatButton}
           onPress={() => navigation.navigate('NewChat')}
         >
-          <Icon name="add" size={24} color="#007AFF" />
+          <MaterialIcons name="add" size={24} color="#007AFF" />
         </TouchableOpacity>
       </View>
-      <TabBar
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabPress={setActiveTab}
-      />
+
       <FlatList
-        data={filteredConversations}
+        data={conversations}
         renderItem={renderConversation}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.conversation_id}
         contentContainerStyle={styles.list}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        onMomentumScrollEnd={handleLoadMore}
+        ListFooterComponent={
+          loading && !refreshing ? (
+            <ActivityIndicator style={styles.loader} color="#007AFF" />
+          ) : null
+        }
       />
     </SafeAreaView>
   );
@@ -136,36 +160,59 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#f0f0f0',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#000',
   },
   newChatButton: {
     padding: 8,
   },
   list: {
-    padding: 16,
+    flexGrow: 1,
   },
   conversationItem: {
     flexDirection: 'row',
-    padding: 12,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#f0f0f0',
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 12,
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
+  },
+  avatarPlaceholder: {
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unreadCount: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   conversationInfo: {
     flex: 1,
@@ -173,40 +220,24 @@ const styles = StyleSheet.create({
   conversationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
   name: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#000',
   },
-  timestamp: {
+  time: {
     fontSize: 12,
     color: '#666',
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   lastMessage: {
-    flex: 1,
     fontSize: 14,
     color: '#666',
-    marginRight: 8,
   },
-  unreadBadge: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  unreadCount: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+  loader: {
+    padding: 16,
   },
 });
 
