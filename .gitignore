@@ -78,3 +78,6 @@ yarn-error.log
 .expo/
 dist/
 web-build/ 
+
+package-lock.json
+yarn.lock
