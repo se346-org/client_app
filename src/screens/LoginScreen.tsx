@@ -1,145 +1,140 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   Alert,
 } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
-import { users } from '../MockData/UserMock';
-import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Input from '../components/Input';
+import TouchableButton from '../components/TouchableButton';
 
-type LoginScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
-};
-
-export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [username, setUsername] = useState('');
+const LoginScreen = ({ navigation }: any) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isPasswordError, setIsPasswordError] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const clearForm = useCallback(() => {
-    setUsername('');
-    setPassword('');
-    setIsPasswordError(false);
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      clearForm();
-    }, [clearForm])
-  );
 
   const handleLogin = () => {
-    if (users.find((user) => user.username === username && user.password === password)) {
-      // navigation.navigate('Welcome', { username });
-      navigation.navigate('ToDoList', { username });
-    } else {
-      setIsPasswordError(true);
-      Alert.alert('Error', 'Invalid username or password');
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
     }
-  };
-
-  const fogotPassword = () => {
-    setPassword('');
-    setIsPasswordError(false);
-    navigation.navigate('ForgotPassword', { username });
+    // TODO: Implement login logic
+    console.log('Login:', { email, password });
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-      />
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={[styles.input, isPasswordError && styles.inputError]}
-          placeholder="Password"
-          value={password}
-          onChangeText={(text) => {
-            setPassword(text);
-            setIsPasswordError(false);
-          }}
-          secureTextEntry={!showPassword}
-        />
-        <TouchableOpacity 
-          style={styles.showPasswordButton}
-          onPress={() => setShowPassword(!showPassword)}
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollView}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.showPasswordText}>
-            {showPassword ? 'Hide' : 'Show'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={fogotPassword}>
-        <Text style={styles.buttonText}>Forgot Password</Text>
-      </TouchableOpacity>
-    </View>
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome Back!</Text>
+            <Text style={styles.subtitle}>Sign in to continue</Text>
+          </View>
+
+          <View style={styles.form}>
+            <Input
+              icon="email"
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <Input
+              icon="lock"
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => navigation.navigate('ForgotPassword')}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            <TouchableButton
+              title="Sign In"
+              onPress={handleLogin}
+            />
+
+            <View style={styles.registerContainer}>
+              <Text style={styles.registerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.registerLink}>Sign Up</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 20,
     backgroundColor: '#fff',
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flexGrow: 1,
+    padding: 20,
+  },
+  header: {
+    marginTop: 40,
+    marginBottom: 40,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+  form: {
+    flex: 1,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
     marginBottom: 20,
-    textAlign: 'center',
   },
-  input: {
-    width: '100%',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    fontSize: 16,
-  },
-  inputError: {
-    borderColor: 'red',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    height: 50,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  showPasswordButton: {
-    position: 'absolute',
-    right: 10,
-    padding: 10,
-  },
-  showPasswordText: {
+  forgotPasswordText: {
     color: '#007AFF',
     fontSize: 14,
   },
-}); 
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  registerText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  registerLink: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+});
+
+export default LoginScreen; 

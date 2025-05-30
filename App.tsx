@@ -1,15 +1,13 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './src/screens/LoginScreen';
-import WelcomeScreen from './src/screens/WelcomeScreen';
-import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
-import ToDoListScreen from './src/screens/ToDoListScreen';
-import CreateToDoScreen from './src/screens/CreateToDoScreen';
-import ToDoDetailScreen from './src/screens/ToDoDetailScreen';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React from 'react';
+import RegisterScreen from './src/screens/RegisterScreen';
 
 export type RootStackParamList = {
   Login: undefined;
+  Register: undefined;
   Welcome: { username: string };
   ForgotPassword: { username: string };
   ToDoList: { username: string };
@@ -38,44 +36,9 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen 
-          name="Welcome" 
-          component={WelcomeScreen}
-          options={({ navigation }) => ({
-            headerLeft: () => null,
-            headerRight: () => <LogoutButton navigation={navigation} />
-          })}
-        />
-        <Stack.Screen 
-          name="ForgotPassword" 
-          component={ForgotPasswordScreen}
-          options={({ navigation }) => ({
-            headerLeft: () => null,
-            headerRight: () => <LogoutButton navigation={navigation} />
-          })}
-        />
-        <Stack.Screen 
-          name="ToDoList" 
-          component={ToDoListScreen}
-          options={({ navigation }) => ({
-            headerLeft: () => null,
-            headerRight: () => <LogoutButton navigation={navigation} />
-          })}
-        />
-        <Stack.Screen 
-          name="CreateToDo" 
-          component={CreateToDoScreen}
-          options={({ navigation }) => ({
-            headerLeft: () => null,
-            headerRight: () => <LogoutButton navigation={navigation} />
-          })}
-        />
-        <Stack.Screen 
-          name="ToDoDetail" 
-          component={ToDoDetailScreen}
-          options={({ navigation }) => ({
-            headerLeft: () => null,
-            headerRight: () => <LogoutButton navigation={navigation} />
-          })}
+          name="Register" 
+          component={RegisterScreen} 
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
