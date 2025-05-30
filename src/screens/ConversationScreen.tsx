@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ const ConversationScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const loadingRef = useRef(false);
 
   const getLastMessageId = useCallback(() => {
     if (conversations.length === 0) return undefined;
@@ -40,7 +41,10 @@ const ConversationScreen = ({ navigation }: any) => {
   }, [conversations]);
 
   const loadConversations = useCallback(async (shouldRefresh = false) => {
+    if (loadingRef.current) return;
+    
     try {
+      loadingRef.current = true;
       const lastMessageId = shouldRefresh ? undefined : getLastMessageId();
       const response = await ConversationService.getConversations(lastMessageId);
       
@@ -55,7 +59,8 @@ const ConversationScreen = ({ navigation }: any) => {
       setHasMore(false);
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      setRefreshing(false)
+      loadingRef.current = false;
     }
   }, [getLastMessageId, updateConversations]);
 
@@ -71,7 +76,7 @@ const ConversationScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     loadConversations(true);
-  }, [loadConversations]);
+  }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -79,7 +84,7 @@ const ConversationScreen = ({ navigation }: any) => {
   };
 
   const handleLoadMore = () => {
-    if (!loading && hasMore) {
+    if (!loading && hasMore && !loadingRef.current) {
       loadConversations(false);
     }
   };
@@ -142,7 +147,6 @@ const ConversationScreen = ({ navigation }: any) => {
         refreshing={refreshing}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
-        onMomentumScrollEnd={handleLoadMore}
         ListFooterComponent={
           loading && !refreshing ? (
             <ActivityIndicator style={styles.loader} color="#007AFF" />

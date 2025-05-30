@@ -94,7 +94,6 @@ class HttpService {
         ...config,
         params,
       });
-      console.log("response", response);
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
