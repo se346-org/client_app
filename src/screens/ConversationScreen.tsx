@@ -15,7 +15,7 @@ import ConversationService from '../services/ConversationService';
 import { Conversation } from '../types/conversation';
 import { formatDistanceToNow } from 'date-fns';
 import StorageService from '../services/StorageService';
-import { UserInfo } from '../services/UserService';
+import { UserInfo } from '../types/user';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -138,7 +138,7 @@ const ConversationScreen = ({ navigation }: any) => {
             <MaterialIcons name="person" size={24} color="#666" />
           </View>
         )}
-        {item.unreadCount > 0 && (
+        {item.unreadCount && item.unreadCount > 0 && (
           <View style={styles.unreadBadge}>
             <Text style={styles.unreadCount}>{item.unreadCount}</Text>
           </View>

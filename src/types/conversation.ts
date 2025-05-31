@@ -31,18 +31,18 @@ export interface GetConversationByIdResponse {
   status: number;
 }
 
-export interface GetConversationById {
-  conversation_id: string;
-  title: string;
-  avatar: string;
-  last_message_id: string;
-  created_at: string;
-  updated_at: string;
-  type: string;
-  members: {
-    user_id: string;
-    full_name: string;
-    avatar: string;
-    user_type: string;
-  }[];
-}
+// export interface GetConversationById {
+//   conversation_id: string;
+//   title: string;
+//   avatar: string;
+//   last_message_id: string;
+//   created_at: string;
+//   updated_at: string;
+//   type: string;
+//   members: {
+//     user_id: string;
+//     full_name: string;
+//     avatar: string;
+//     user_type: string;
+//   }[];
+// }

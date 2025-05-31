@@ -29,23 +29,23 @@ class StorageService {
     }
   }
 
-  async setAuthToken(token: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-    } catch (error) {
-      console.error("Error saving auth token:", error);
-      throw error;
-    }
-  }
+  // async setAuthToken(token: string): Promise<void> {
+  //   try {
+  //     await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+  //   } catch (error) {
+  //     console.error("Error saving auth token:", error);
+  //     throw error;
+  //   }
+  // }
 
-  async getAuthToken(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-    } catch (error) {
-      console.error("Error getting auth token:", error);
-      return null;
-    }
-  }
+  // async getAuthToken(): Promise<string | null> {
+  //   try {
+  //     return await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  //   } catch (error) {
+  //     console.error("Error getting auth token:", error);
+  //     return null;
+  //   }
+  // }
 
   async clearStorage(): Promise<void> {
     try {

@@ -19,8 +19,8 @@ export interface UserSearchResponse {
   status: number;
 }
 
-export interface UserSearch {
-  full_name: string;
-  avatar: string;
-  user_id: string;
-}
+// export interface UserSearch {
+//   full_name: string;
+//   avatar: string;
+//   user_id: string;
+// }

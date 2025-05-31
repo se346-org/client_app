@@ -1,5 +1,5 @@
 import HttpService from "./HttpService";
-import { UserInfo, UserInfoResponse, UserSearchResponse } from "../types/user";
+import { UserInfoResponse, UserSearchResponse } from "../types/user";
 
 class UserService {
   async getUserInfo(): Promise<UserInfoResponse> {
