@@ -16,6 +16,8 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import LoginService from '../services/LoginService';
+import UserService from '../services/UserService';
+import StorageService from '../services/StorageService';
 
 interface LoginFormData {
   email: string;
@@ -41,7 +43,16 @@ const LoginScreen = ({ navigation }: any) => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true);
-      await LoginService.login(data);
+      const loginResponse = await LoginService.login(data);
+      
+      // Fetch user info after successful login
+      const userInfoResponse = await UserService.getUserInfo();
+      
+      if (userInfoResponse?.data) {
+        // Store user info in AsyncStorage
+        await StorageService.setUserInfo(userInfoResponse.data);
+      }
+
       navigation.reset({
         index: 0,
         routes: [{ name: 'Main' }],

@@ -11,8 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
-import ConversationService, { Conversation } from '../services/ConversationService';
+import ConversationService from '../services/ConversationService';
+import { Conversation } from '../types/conversation';
 import { formatDistanceToNow } from 'date-fns';
+import StorageService from '../services/StorageService';
+import { UserInfo } from '../services/UserService';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -22,7 +25,40 @@ const ConversationScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
   const loadingRef = useRef(false);
+
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      const userInfo = await StorageService.getUserInfo();
+      setCurrentUser(userInfo);
+    };
+    loadUserInfo();
+  }, []);
+
+  const getConversationTitle = (conversation: Conversation) => {
+    if (!currentUser) return conversation.title;
+
+    if (conversation.type === 'DM') {
+      const otherMember = conversation.members.find(
+        member => member.user_id !== currentUser.user_id
+      );
+      if (otherMember) {
+        return otherMember.full_name;
+      }
+    } else if (conversation.type === 'GROUP') {
+      const memberNames = conversation.members
+        .map(member => member.full_name)
+        .join(', ');
+      
+      if (memberNames.length > 20) {
+        return memberNames.substring(0, 20) + '...';
+      }
+      return memberNames;
+    }
+
+    return conversation.title;
+  };
 
   const getLastMessageId = useCallback(() => {
     if (conversations.length === 0) return undefined;
@@ -66,11 +102,11 @@ const ConversationScreen = ({ navigation }: any) => {
 
   const handleConversationPress = async (conversation: Conversation) => {
     try {
-      await ConversationService.markAsRead(conversation.conversation_id);
-      navigation.navigate('Chat', { conversationId: conversation.conversation_id });
+      await ConversationService.markAsRead(conversation.conversation_id, conversation.last_message_id);
+      navigation.navigate('ConversationDetail', { conversationId: conversation.conversation_id });
     } catch (error) {
       console.error('Error marking conversation as read:', error);
-      navigation.navigate('Chat', { conversationId: conversation.conversation_id });
+      navigation.navigate('ConversationDetail', { conversationId: conversation.conversation_id });
     }
   };
 
@@ -110,7 +146,7 @@ const ConversationScreen = ({ navigation }: any) => {
       </View>
       <View style={styles.conversationInfo}>
         <View style={styles.conversationHeader}>
-          <Text style={styles.name}>{item.conversation_id}</Text>
+          <Text style={styles.name}>{getConversationTitle(item)}</Text>
           {item.lastMessage && (
             <Text style={styles.time}>
               {formatDistanceToNow(new Date(item.lastMessage.createdAt), { addSuffix: true })}
