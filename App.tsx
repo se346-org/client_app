@@ -10,6 +10,7 @@ import ConversationScreen from './src/screens/ConversationScreen';
 import ConversationDetailScreen from './src/screens/ConversationDetailScreen';
 import ContactScreen from './src/screens/ContactScreen';
 import AccountScreen from './src/screens/AccountScreen';
+import NewConversationScreen from './src/screens/NewConversationScreen';
 import './src/i18n';
 
 export type RootStackParamList = {
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   ConversationDetail: { conversationId: string };
   AddContact: undefined;
   NewChat: undefined;
+  NewConversation: undefined;
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -114,6 +116,23 @@ export default function App() {
         />
         <Stack.Screen name="AddContact" component={ContactScreen} />
         <Stack.Screen name="NewChat" component={ConversationScreen} />
+        <Stack.Screen 
+          name="NewConversation" 
+          component={NewConversationScreen}
+          options={{
+            headerShown: true,
+            title: 'New Conversation',
+            headerBackTitle: '',
+            headerStyle: {
+              backgroundColor: '#fff',
+            },
+            headerShadowVisible: false,
+            headerTitleStyle: {
+              fontSize: 17,
+              fontWeight: '600',
+            },
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

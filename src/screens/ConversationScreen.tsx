@@ -162,13 +162,26 @@ const ConversationScreen = ({ navigation }: any) => {
     </TouchableOpacity>
   );
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('NewConversation')}
+          style={{ marginRight: 16 }}
+        >
+          <MaterialIcons name="add" size={24} color="#007AFF" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('conversations.title')}</Text>
         <TouchableOpacity
           style={styles.newChatButton}
-          onPress={() => navigation.navigate('NewChat')}
+          onPress={() => navigation.navigate('NewConversation')}
         >
           <MaterialIcons name="add" size={24} color="#007AFF" />
         </TouchableOpacity>
@@ -211,9 +224,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#000',
-  },
-  newChatButton: {
-    padding: 8,
   },
   list: {
     flexGrow: 1,
@@ -278,6 +288,9 @@ const styles = StyleSheet.create({
   },
   loader: {
     padding: 16,
+  },
+  newChatButton: {
+    padding: 8,
   },
 });
 

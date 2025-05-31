@@ -17,6 +17,11 @@ interface SendMessageRequest {
   user_online_id: string;
 }
 
+interface CreateConversationRequest {
+  type: string;
+  members: string[];
+}
+
 class ConversationService {
   async getConversations(
     last_message_id?: string
@@ -44,6 +49,20 @@ class ConversationService {
     }
   }
 
+  async createConversation(
+    data: CreateConversationRequest
+  ): Promise<GetConversationByIdResponse> {
+    try {
+      return await HttpService.post<GetConversationByIdResponse>(
+        "/auth/conversation",
+        data
+      );
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      throw error;
+    }
+  }
+
   // async getLastMessages(): Promise<ConversationResponse> {
   //   try {
   //     return await HttpService.get<ConversationResponse>(
@@ -51,17 +70,6 @@ class ConversationService {
   //     );
   //   } catch (error) {
   //     console.error("Error getting last messages:", error);
-  //     throw error;
-  //   }
-  // }
-
-  // async createConversation(userId: string): Promise<ConversationResponse> {
-  //   try {
-  //     return await HttpService.post<ConversationResponse>("/conversation", {
-  //       userId,
-  //     });
-  //   } catch (error) {
-  //     console.error("Error creating conversation:", error);
   //     throw error;
   //   }
   // }
