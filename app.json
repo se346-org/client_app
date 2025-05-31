@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "baitap1",
-    "slug": "baitap1",
+    "name": "client_app",
+    "slug": "client_app",  
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.baitap1"
+      "bundleIdentifier": "com.anonymous.client_app"
     },
     "android": {
       "adaptiveIcon": {
