@@ -5,14 +5,10 @@ import { API_CONFIG } from "../config";
 class RegisterService {
   async register(data: RegisterRequest): Promise<RegisterResponse> {
     try {
-      console.log("Attempting login with:", { email: data.email });
-      console.log("API URL:", `${API_CONFIG.BASE_URL}/auth/login`);
-
       const registerData = await HttpService.post<RegisterResponse>(
         "/user/register",
         data
       );
-      console.log("Register successful:", registerData);
 
       // Extract access token from response
       const success = registerData.data.success;

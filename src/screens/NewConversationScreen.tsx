@@ -40,7 +40,6 @@ const NewConversationScreen = () => {
     if (searchText.length > 0) {
       try {
         const response = await UserService.searchUsers(searchText);
-        console.log("Search results:", response.data);
         setSearchResults(response.data);
       } catch (error) {
         console.error('Error searching users:', error);
@@ -70,7 +69,6 @@ const NewConversationScreen = () => {
       const members = [...selectedUsers, currentUser];
       setLoading(true);
       // Create conversation first
-      console.log("Creating conversation with members:", selectedUsers.map(user => user.user_id));
       const conversationResponse = await ConversationService.createConversation({
         type: 'GROUP',
         members: members.map(user => user.user_id),
@@ -115,7 +113,6 @@ const NewConversationScreen = () => {
   );
 
   const renderSearchResult = ({ item }: { item: UserInfo }) => {
-    console.log("Rendering search result item:", item);
     return (
       <TouchableOpacity
         style={styles.searchResultItem}
