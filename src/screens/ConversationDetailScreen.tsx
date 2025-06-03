@@ -30,6 +30,7 @@ const ConversationDetailScreen = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [wsService] = useState(() => WebSocketService.getInstance());
   const flatListRef = useRef<FlatList<Message> | null>(null);
+  const [conversation, setConversation] = useState<any>(null);
 
   useEffect(() => {
     const loadCurrentUser = async () => {
@@ -90,6 +91,39 @@ const ConversationDetailScreen = () => {
       wsService.offMessage(handleMessage);
     };
   }, [conversationId, wsService]);
+
+  useEffect(() => {
+    const fetchConversation = async () => {
+      try {
+        const response = await ConversationService.getConversationById(conversationId);
+        if (response?.data) {
+          setConversation(response.data);
+          // Set title based on conversation type
+          if (response.data.type === 'DM') {
+            // For DM, show other user's name
+            const otherUser = response.data.members.find(m => m.user_id !== currentUser?.user_id);
+            if (otherUser) {
+              navigation.setOptions({
+                title: otherUser.full_name
+              });
+            }
+          } else {
+            // For group, combine member names
+            const memberNames = response.data.members
+              .map(member => member.full_name)
+              .join(', ');
+            navigation.setOptions({
+              title: memberNames || 'Group Chat'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching conversation:', error);
+      }
+    };
+
+    fetchConversation();
+  }, [conversationId, currentUser, navigation]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !currentUser) return;
@@ -152,7 +186,7 @@ const ConversationDetailScreen = () => {
   const allMessages = [...messages, ...wsMessages];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

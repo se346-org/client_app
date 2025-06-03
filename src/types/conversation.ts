@@ -4,6 +4,7 @@ export interface Conversation {
   created_at: string;
   updated_at: string;
   type: string;
+  title?: string;
   last_message: {
     message_id: string;
     body: string;
