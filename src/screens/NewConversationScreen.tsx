@@ -95,24 +95,10 @@ const NewConversationScreen = () => {
           user_online_id: "currentUser.user_online_id"
         });
 
-        // Reset navigation stack with both Conversation and ConversationDetail
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [
-              { 
-                name: 'Main',
-                state: {
-                  routes: [
-                    { name: 'Conversation' },
-                    { name: 'ConversationDetail', params: { conversationId: conversationResponse.data.conversation_id } }
-                  ],
-                  index: 1
-                }
-              }
-            ],
-          })
-        );
+        // Replace current screen with ConversationDetail
+        navigation.replace('ConversationDetail', { 
+          conversationId: conversationResponse.data.conversation_id 
+        });
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
