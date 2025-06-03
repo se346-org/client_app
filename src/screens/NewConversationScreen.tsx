@@ -143,7 +143,7 @@ const NewConversationScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <TextInput
