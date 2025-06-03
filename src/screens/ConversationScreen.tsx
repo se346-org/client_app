@@ -38,7 +38,7 @@ const ConversationScreen = ({ navigation }: any) => {
   }, []);
 
   useEffect(() => {
-    const handleUpdateLastMessage = (message: WebSocketMessage) => {
+    const handleWebSocketMessage = async (message: WebSocketMessage) => {
       if (message.type === 'UPDATE_LAST_MESSAGE') {
         setConversations(prevConversations => {
           const updatedConversations = prevConversations.map(conversation => {
@@ -67,17 +67,34 @@ const ConversationScreen = ({ navigation }: any) => {
           );
           return sortedConversations;
         });
+      } else if (message.type === 'MESSAGE') {
+        // Check if conversation exists in current state
+        const conversationExists = conversations.some(
+          conv => conv.conversation_id === message.payload.conversation_id
+        );
+
+        if (!conversationExists) {
+          // If conversation doesn't exist, fetch latest conversations
+          try {
+            const response = await ConversationService.getConversations();
+            if (response?.data) {
+              setConversations(response.data);
+            }
+          } catch (error) {
+            console.error('Error fetching conversations:', error);
+          }
+        }
       }
     };
 
     // Connect to WebSocket
     WebSocketService.getInstance().connect();
-    WebSocketService.getInstance().onMessage(handleUpdateLastMessage);
+    WebSocketService.getInstance().onMessage(handleWebSocketMessage);
 
     return () => {
-      WebSocketService.getInstance().offMessage(handleUpdateLastMessage);
+      WebSocketService.getInstance().offMessage(handleWebSocketMessage);
     };
-  }, []);
+  }, [conversations]);
 
   const getConversationTitle = (conversation: Conversation) => {
     if (!currentUser) return '';

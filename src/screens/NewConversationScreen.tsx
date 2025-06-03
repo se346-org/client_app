@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import ConversationService from '../services/ConversationService';
@@ -19,10 +19,12 @@ import StorageService from '../services/StorageService';
 import { UserInfo } from '../types/user';
 
 type RootStackParamList = {
+  Main: undefined;
+  Conversation: undefined;
   ConversationDetail: { conversationId: string };
 };
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ConversationDetail'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const NewConversationScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -47,7 +49,11 @@ const NewConversationScreen = () => {
     if (searchText.length > 0) {
       try {
         const response = await UserService.searchUsers(searchText);
-        setSearchResults(response.data);
+        // Filter out duplicate users based on user_id
+        const uniqueUsers = response.data.filter((user, index, self) =>
+          index === self.findIndex((u) => u.user_id === user.user_id)
+        );
+        setSearchResults(uniqueUsers);
       } catch (error) {
         console.error('Error searching users:', error);
       }
@@ -89,10 +95,24 @@ const NewConversationScreen = () => {
           user_online_id: "currentUser.user_online_id"
         });
 
-        // Navigate to conversation detail
-        navigation.navigate('ConversationDetail', {
-          conversationId: conversationResponse.data.conversation_id,
-        });
+        // Reset navigation stack with both Conversation and ConversationDetail
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              { 
+                name: 'Main',
+                state: {
+                  routes: [
+                    { name: 'Conversation' },
+                    { name: 'ConversationDetail', params: { conversationId: conversationResponse.data.conversation_id } }
+                  ],
+                  index: 1
+                }
+              }
+            ],
+          })
+        );
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
@@ -118,10 +138,14 @@ const NewConversationScreen = () => {
   );
 
   const renderSearchResult = ({ item }: { item: UserInfo }) => {
+    // Check if user is already selected
+    const isSelected = selectedUsers.some(user => user.user_id === item.user_id);
+    
     return (
       <TouchableOpacity
         style={styles.searchResultItem}
         onPress={() => handleSelectUser(item)}
+        disabled={isSelected}
       >
         <Image
           source={{ uri: item.avatar || 'https://via.placeholder.com/40' }}
@@ -155,9 +179,9 @@ const NewConversationScreen = () => {
       {searchResults.length > 0 && (
         <View style={styles.searchResultsContainer}>
           <FlatList
-            data={searchResults}
+            data={searchResults.filter(user => !selectedUsers.some(selected => selected.user_id === user.user_id))}
             renderItem={renderSearchResult}
-            keyExtractor={item => item.user_id}
+            keyExtractor={item => `search-${item.user_id}`}
             style={styles.searchResultsList}
             contentContainerStyle={styles.searchResultsContent}
           />
