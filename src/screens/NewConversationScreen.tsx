@@ -11,14 +11,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import ConversationService from '../services/ConversationService';
 import UserService from '../services/UserService';
 import StorageService from '../services/StorageService';
 import { UserInfo } from '../types/user';
 
+type RootStackParamList = {
+  ConversationDetail: { conversationId: string };
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ConversationDetail'>;
+
 const NewConversationScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [searchText, setSearchText] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<UserInfo[]>([]);
   const [searchResults, setSearchResults] = useState<UserInfo[]>([]);
@@ -64,15 +71,13 @@ const NewConversationScreen = () => {
   const handleSendMessage = async () => {
     if (selectedUsers.length === 0 || !messageText.trim() || !currentUser) return;
 
-    
     try {
       const members = [...selectedUsers, currentUser];
       setLoading(true);
       // Create conversation first
       const conversationResponse = await ConversationService.createConversation({
-        type: 'GROUP',
+        type: selectedUsers.length === 1 ? 'DM' : 'GROUP',
         members: members.map(user => user.user_id),
-
       });
 
       if (conversationResponse?.data) {

@@ -16,6 +16,7 @@ import { Conversation } from '../types/conversation';
 import { formatDistanceToNow } from 'date-fns';
 import StorageService from '../services/StorageService';
 import { UserInfo } from '../types/user';
+import WebSocketService, { WebSocketMessage } from '../services/WebSocketService';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -34,6 +35,48 @@ const ConversationScreen = ({ navigation }: any) => {
       setCurrentUser(userInfo);
     };
     loadUserInfo();
+  }, []);
+
+  useEffect(() => {
+    const handleUpdateLastMessage = (message: WebSocketMessage) => {
+      if (message.type === 'UPDATE_LAST_MESSAGE') {
+        setConversations(prevConversations => {
+          const updatedConversations = prevConversations.map(conversation => {
+            if (conversation.conversation_id === message.payload.id) {
+              return {
+                ...conversation,
+                last_message: {
+                  ...message.payload.last_message,
+                  message_id: message.payload.last_message.id,
+                  user: {
+                    user_id: message.payload.last_message.user_id,
+                    full_name: message.payload.last_message.user.full_name,
+                    user_type: message.payload.last_message.user.type
+                  }
+                },
+                last_message_id: message.payload.last_message.id,
+                updated_at: message.payload.last_message.created_at
+              };
+            }
+            return conversation;
+          });
+
+          // Sort conversations by updated_at
+          const sortedConversations = updatedConversations.sort((a, b) => 
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          );
+          return sortedConversations;
+        });
+      }
+    };
+
+    // Connect to WebSocket
+    WebSocketService.getInstance().connect();
+    WebSocketService.getInstance().onMessage(handleUpdateLastMessage);
+
+    return () => {
+      WebSocketService.getInstance().offMessage(handleUpdateLastMessage);
+    };
   }, []);
 
   const getConversationTitle = (conversation: Conversation) => {
@@ -62,7 +105,6 @@ const ConversationScreen = ({ navigation }: any) => {
 
   const getLastMessageId = useCallback(() => {
     if (conversations.length === 0) return undefined;
-    console.log('tin nhan moi nhat', conversations[0].last_message_id);
     return conversations[conversations.length - 1].last_message_id;
   }, [conversations]);
 
