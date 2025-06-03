@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,10 +24,12 @@ const ConversationDetailScreen = () => {
   const route = useRoute();
   const { conversationId } = route.params as { conversationId: string };
   const [messages, setMessages] = useState<Message[]>([]);
+  const [wsMessages, setWsMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [wsService] = useState(() => WebSocketService.getInstance());
+  const flatListRef = useRef<FlatList<Message> | null>(null);
 
   useEffect(() => {
     const loadCurrentUser = async () => {
@@ -44,7 +46,11 @@ const ConversationDetailScreen = () => {
       try {
         setLoading(true);
         const response = await ConversationService.getMessages(conversationId);
-        setMessages(response.data);
+        // Sort messages by created_at in descending order (newest first)
+        const sortedMessages = response.data.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setMessages(sortedMessages);
       } catch (error) {
         console.error('Error loading messages:', error);
       } finally {
@@ -59,7 +65,22 @@ const ConversationDetailScreen = () => {
     // Handle incoming messages
     const handleMessage = (message: WebSocketMessage) => {
       if (message.type === 'MESSAGE' && message.payload.conversation_id === conversationId) {
-        setMessages(prevMessages => [...prevMessages, message.payload]);
+        // Map WebSocket message to Message interface
+        const mappedMessage: Message = {
+          message_id: message.payload.id,
+          body: message.payload.body,
+          type: message.payload.type,
+          created_at: message.payload.created_at,
+          updated_at: message.payload.updated_at,
+          conversation_id: message.payload.conversation_id,
+          user: {
+            user_id: message.payload.user_id,
+            full_name: message.payload.user.full_name,
+            avatar: message.payload.user.avatar || 'https://via.placeholder.com/40'
+          }
+        };
+        // Add new message to the beginning of the list
+        setMessages(prevMessages => [mappedMessage, ...prevMessages]);
       }
     };
 
@@ -75,17 +96,13 @@ const ConversationDetailScreen = () => {
 
     try {
       setLoading(true);
-      const response = await ConversationService.sendMessage({
+      await ConversationService.sendMessage({
         type: 'text',
         body: messageText.trim(),
         conversation_id: conversationId,
         user_online_id: "currentUser.user_online_id"
       });
-
-      if (response?.data) {
-        setMessages(prevMessages => [...prevMessages, response.data]);
-        setMessageText('');
-      }
+      setMessageText('');
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -94,7 +111,7 @@ const ConversationDetailScreen = () => {
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
-    const isCurrentUser = item.user?.user_id === currentUser?.user_id;
+    const isCurrentUser = String(item.user?.user_id) === String(currentUser?.user_id);
 
     return (
       <View style={[
@@ -131,6 +148,9 @@ const ConversationDetailScreen = () => {
     );
   };
 
+  // Combine messages from API and WebSocket
+  const allMessages = [...messages, ...wsMessages];
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -148,6 +168,8 @@ const ConversationDetailScreen = () => {
             renderItem={renderMessage}
             keyExtractor={item => item.message_id || `${item.created_at}-${item.user?.user_id}`}
             contentContainerStyle={styles.messagesList}
+            inverted={true}
+            ref={flatListRef}
           />
         )}
 

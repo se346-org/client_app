@@ -37,7 +37,7 @@ const ConversationScreen = ({ navigation }: any) => {
   }, []);
 
   const getConversationTitle = (conversation: Conversation) => {
-    if (!currentUser) return conversation.title;
+    if (!currentUser) return '';
 
     if (conversation.type === 'DM') {
       const otherMember = conversation.members.find(
@@ -57,11 +57,12 @@ const ConversationScreen = ({ navigation }: any) => {
       return memberNames;
     }
 
-    return conversation.title;
+    return '';
   };
 
   const getLastMessageId = useCallback(() => {
     if (conversations.length === 0) return undefined;
+    console.log('tin nhan moi nhat', conversations[0].last_message_id);
     return conversations[conversations.length - 1].last_message_id;
   }, [conversations]);
 
@@ -125,42 +126,55 @@ const ConversationScreen = ({ navigation }: any) => {
     }
   };
 
-  const renderConversation = ({ item }: { item: Conversation }) => (
-    <TouchableOpacity
-      style={styles.conversationItem}
-      onPress={() => handleConversationPress(item)}
-    >
-      <View style={styles.avatarContainer}>
-        {item.avatar ? (
-          <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        ) : (
+  const renderConversation = ({ item }: { item: Conversation }) => {
+    const isUnread = item.last_message && 
+      !item.last_message.is_read && 
+      item.last_message.user.user_id !== currentUser?.user_id;
+
+    return (
+      <TouchableOpacity
+        style={styles.conversationItem}
+        onPress={() => handleConversationPress(item)}
+      >
+        <View style={styles.avatarContainer}>
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <MaterialIcons name="person" size={24} color="#666" />
           </View>
-        )}
-        {item.unreadCount && item.unreadCount > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+          {isUnread && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadCount}>1</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.conversationInfo}>
+          <View style={styles.conversationHeader}>
+            <Text style={[
+              styles.name,
+              isUnread && styles.unreadName
+            ]}>
+              {getConversationTitle(item)}
+            </Text>
+            {item.last_message && (
+              <Text style={styles.time}>
+                {formatDistanceToNow(new Date(item.last_message.created_at), { addSuffix: true })}
+              </Text>
+            )}
           </View>
-        )}
-      </View>
-      <View style={styles.conversationInfo}>
-        <View style={styles.conversationHeader}>
-          <Text style={styles.name}>{getConversationTitle(item)}</Text>
-          {item.lastMessage && (
-            <Text style={styles.time}>
-              {formatDistanceToNow(new Date(item.lastMessage.createdAt), { addSuffix: true })}
+          {item.last_message && (
+            <Text 
+              style={[
+                styles.lastMessage,
+                isUnread && styles.unreadMessage
+              ]} 
+              numberOfLines={1}
+            >
+              {item.last_message.body}
             </Text>
           )}
         </View>
-        {item.lastMessage && (
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage.content}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -291,6 +305,14 @@ const styles = StyleSheet.create({
   },
   newChatButton: {
     padding: 8,
+  },
+  unreadName: {
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  unreadMessage: {
+    fontWeight: '600',
+    color: '#000',
   },
 });
 

@@ -19,12 +19,11 @@ class HttpService {
     return HttpService.instance;
   }
 
-  private setupAxiosInterceptors() {
+  private async setupAxiosInterceptors() {
     axios.interceptors.request.use(
       async (config) => {
-        if (!this.token) {
-          this.token = await SecureStore.getItemAsync(TOKEN_KEY);
-        }
+        // Always get the latest token from SecureStore
+        this.token = await SecureStore.getItemAsync(TOKEN_KEY);
         if (this.token) {
           config.headers = new axios.AxiosHeaders({
             ...config.headers,
@@ -107,7 +106,6 @@ class HttpService {
   ): Promise<T> {
     try {
       const response = await axios.post<T>(`${BASE_URL}${url}`, data, config);
-
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
