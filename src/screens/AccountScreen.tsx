@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 import Button from '../components/Button';
+import EditProfileModal from './EditProfileModal';
 import * as SecureStore from "expo-secure-store";
 import { TOKEN_KEY } from '../services/LoginService';
 import StorageService from '../services/StorageService';
@@ -20,6 +21,7 @@ import { UserInfo } from '../types/user';
 const AccountScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
 
   useEffect(() => {
     const loadUserInfo = async () => {
@@ -42,12 +44,20 @@ const AccountScreen = ({ navigation }: any) => {
     }
   };
 
+  const handleUpdateProfile = (updatedInfo: UserInfo) => {
+    setUserInfo(updatedInfo);
+  };
+
+  if (!userInfo) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            {userInfo?.avatar ? (
+            {userInfo.avatar ? (
               <Image 
                 source={{ uri: userInfo.avatar }} 
                 style={styles.avatar}
@@ -60,12 +70,15 @@ const AccountScreen = ({ navigation }: any) => {
               />
             )}
           </View>
-          <Text style={styles.name}>{userInfo?.full_name || ''}</Text>
-          <Text style={styles.email}>{userInfo?.email || ''}</Text>
+          <Text style={styles.name}>{userInfo.full_name}</Text>
+          <Text style={styles.email}>{userInfo.email}</Text>
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => setEditModalVisible(true)}
+          >
             <MaterialIcons name="person-outline" size={24} color="#666" />
             <Text style={styles.menuText}>{t('account.editProfile')}</Text>
             <MaterialIcons name="chevron-right" size={24} color="#666" />
@@ -92,6 +105,13 @@ const AccountScreen = ({ navigation }: any) => {
             variant="secondary"
           />
         </View>
+
+        <EditProfileModal
+          visible={editModalVisible}
+          onClose={() => setEditModalVisible(false)}
+          userInfo={userInfo}
+          onUpdateSuccess={handleUpdateProfile}
+        />
       </ScrollView>
     </SafeAreaView>
   );
