@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -13,9 +14,24 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Button from '../components/Button';
 import * as SecureStore from "expo-secure-store";
 import { TOKEN_KEY } from '../services/LoginService';
+import StorageService from '../services/StorageService';
+import { UserInfo } from '../types/user';
 
 const AccountScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const info = await StorageService.getUserInfo();
+        setUserInfo(info);
+      } catch (error) {
+        console.error('Error loading user info:', error);
+      }
+    };
+    loadUserInfo();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -31,10 +47,21 @@ const AccountScreen = ({ navigation }: any) => {
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <MaterialIcons name="person" size={50} color="#666" />
+            {userInfo?.avatar ? (
+              <Image 
+                source={{ uri: userInfo.avatar }} 
+                style={styles.avatar}
+                defaultSource={require('../../assets/default-avatar.png')}
+              />
+            ) : (
+              <Image 
+                source={require('../../assets/default-avatar.png')}
+                style={styles.avatar}
+              />
+            )}
           </View>
-          <Text style={styles.name}>{'hhehehehe'}</Text>
-          <Text style={styles.email}>{'hêhhehe'}</Text>
+          <Text style={styles.name}>{userInfo?.full_name || ''}</Text>
+          <Text style={styles.email}>{userInfo?.email || ''}</Text>
         </View>
 
         <View style={styles.section}>
@@ -64,7 +91,6 @@ const AccountScreen = ({ navigation }: any) => {
             icon="logout"
             variant="secondary"
           />
-         
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -92,6 +118,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   name: {
     fontSize: 24,

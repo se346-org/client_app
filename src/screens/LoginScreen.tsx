@@ -49,8 +49,13 @@ const LoginScreen = ({ navigation }: any) => {
       const userInfoResponse = await UserService.getUserInfo();
       
       if (userInfoResponse?.data) {
+        // Ensure avatar field exists in user info
+        const userInfo = {
+          ...userInfoResponse.data,
+          avatar: userInfoResponse.data.avatar || ''
+        };
         // Store user info in AsyncStorage
-        await StorageService.setUserInfo(userInfoResponse.data);
+        await StorageService.setUserInfo(userInfo);
       }
 
       navigation.reset({
