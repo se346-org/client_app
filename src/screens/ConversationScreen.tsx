@@ -17,11 +17,12 @@ import { formatDistanceToNow } from 'date-fns';
 import StorageService from '../services/StorageService';
 import { UserInfo } from '../types/user';
 import WebSocketService, { WebSocketMessage } from '../services/WebSocketService';
+import { vi, enUS } from 'date-fns/locale';
 
 const ITEMS_PER_PAGE = 20;
 
 const ConversationScreen = ({ navigation }: any) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -185,6 +186,33 @@ const ConversationScreen = ({ navigation }: any) => {
     }
   };
 
+  const formatTimeAgo = (date: Date) => {
+    const locale = i18n.language === 'vi' ? vi : enUS;
+    const distance = formatDistanceToNow(date, { 
+      addSuffix: true,
+      locale 
+    });
+    
+    // Replace English text with translated text
+    if (i18n.language === 'vi') {
+      return distance
+        .replace('about', 'khoảng')
+        .replace('less than', 'chưa đến')
+        .replace('over', 'hơn')
+        .replace('almost', 'gần')
+        .replace('minute', t('conversations.minutes'))
+        .replace('hour', t('conversations.hours'))
+        .replace('day', t('conversations.days'))
+        .replace('week', t('conversations.weeks'))
+        .replace('month', t('conversations.months'))
+        .replace('year', t('conversations.years'))
+        .replace('ago', t('conversations.timeAgo').replace('{{time}}', ''))
+        .replace('just now', t('conversations.now'));
+    }
+    
+    return distance;
+  };
+
   const renderConversation = ({ item }: { item: Conversation }) => {
     const isUnread = item.last_message && 
       !item.last_message.is_read && 
@@ -215,7 +243,7 @@ const ConversationScreen = ({ navigation }: any) => {
             </Text>
             {item.last_message && (
               <Text style={styles.time}>
-                {formatDistanceToNow(new Date(item.last_message.created_at), { addSuffix: true })}
+                {formatTimeAgo(new Date(item.last_message.created_at))}
               </Text>
             )}
           </View>

@@ -10,24 +10,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, CommonActions } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import ConversationService from '../services/ConversationService';
 import UserService from '../services/UserService';
 import StorageService from '../services/StorageService';
 import { UserInfo } from '../types/user';
 
-type RootStackParamList = {
-  Main: undefined;
-  Conversation: undefined;
-  ConversationDetail: { conversationId: string };
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
 const NewConversationScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation();
+  const { t } = useTranslation();
   const [searchText, setSearchText] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<UserInfo[]>([]);
   const [searchResults, setSearchResults] = useState<UserInfo[]>([]);
@@ -45,6 +38,12 @@ const NewConversationScreen = () => {
     loadCurrentUser();
   }, []);
 
+  useEffect(() => {
+    navigation.setOptions({
+      title: t('newConversation.title')
+    });
+  }, [navigation, t]);
+
   const handleSearch = async () => {
     if (searchText.length > 0) {
       try {
@@ -55,7 +54,7 @@ const NewConversationScreen = () => {
         );
         setSearchResults(uniqueUsers);
       } catch (error) {
-        console.error('Error searching users:', error);
+        console.error(t('newConversation.error.search'));
       }
     } else {
       setSearchResults([]);
@@ -101,7 +100,7 @@ const NewConversationScreen = () => {
         });
       }
     } catch (error) {
-      console.error('Error creating conversation:', error);
+      console.error(t('newConversation.error.create'));
     } finally {
       setLoading(false);
     }
@@ -148,7 +147,7 @@ const NewConversationScreen = () => {
         <View style={styles.searchInputContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search users..."
+            placeholder={t('newConversation.searchPlaceholder')}
             value={searchText}
             onChangeText={setSearchText}
             onSubmitEditing={handleSearch}
@@ -170,6 +169,9 @@ const NewConversationScreen = () => {
             keyExtractor={item => `search-${item.user_id}`}
             style={styles.searchResultsList}
             contentContainerStyle={styles.searchResultsContent}
+            ListEmptyComponent={
+              <Text style={styles.noResults}>{t('newConversation.noResults')}</Text>
+            }
           />
         </View>
       )}
@@ -188,7 +190,7 @@ const NewConversationScreen = () => {
         <View style={styles.messageContainer}>
           <TextInput
             style={styles.messageInput}
-            placeholder="Type a message..."
+            placeholder={t('newConversation.messagePlaceholder')}
             value={messageText}
             onChangeText={setMessageText}
             multiline
@@ -328,6 +330,11 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#ccc',
+  },
+  noResults: {
+    textAlign: 'center',
+    color: '#666',
+    padding: 16,
   },
 });
 

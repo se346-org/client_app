@@ -3,7 +3,7 @@
     "welcome": "Welcome Back!",
     "signIn": "Sign In",
     "signUp": "Sign Up",
-    "email": "Email",
+    "email": "Enter your email",
     "password": "Password",
     "forgotPassword": "Forgot Password?",
     "noAccount": "Don't have an account?",
@@ -13,5 +13,37 @@
     "required": "{{field}} is required",
     "invalidEmail": "Invalid email format",
     "minLength": "{{field}} must be at least {{min}} characters"
+  },
+  "conversations": {
+    "title": "Conversations",
+    "empty": "No conversations yet",
+    "unknown": "Unknown",
+    "new": "New Conversation",
+    "group": "Group Chat",
+    "direct": "Direct Message",
+    "lastMessage": "Last Message",
+    "timeAgo": "{{time}} ago",
+    "now": "Just now",
+    "minutes": "minutes",
+    "hours": "hours",
+    "days": "days",
+    "weeks": "weeks",
+    "months": "months",
+    "years": "years"
+  },
+  "newConversation": {
+    "title": "New Conversation",
+    "searchPlaceholder": "Search users...",
+    "messagePlaceholder": "Type a message...",
+    "selectedUsers": "Selected Users",
+    "searchResults": "Search Results",
+    "noResults": "No results found",
+    "send": "Send",
+    "sending": "Sending...",
+    "error": {
+      "search": "Error searching users",
+      "create": "Error creating conversation",
+      "send": "Error sending message"
+    }
   }
 } 
