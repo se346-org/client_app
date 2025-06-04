@@ -1,212 +1,179 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  ActivityIndicator,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
+  FlatList,
+  Image,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import ConversationService from '../services/ConversationService';
 import StorageService from '../services/StorageService';
+import WebSocketService, { WebSocketMessage } from '../services/WebSocketService';
 import { Message } from '../types/message';
-import { UserInfo } from '../types/user';
-
-type ConversationDetailParams = {
-  conversationId: string;
-};
-
-type ConversationDetailRouteProp = RouteProp<{ ConversationDetail: ConversationDetailParams }, 'ConversationDetail'>;
-
-const ITEMS_PER_PAGE = 20;
 
 const ConversationDetailScreen = () => {
-  const { t } = useTranslation();
-  const route = useRoute<ConversationDetailRouteProp>();
   const navigation = useNavigation();
+  const route = useRoute();
+  const { conversationId } = route.params as { conversationId: string };
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [wsMessages, setWsMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState('');
-  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
-  const [conversationName, setConversationName] = useState('');
-  const conversationId = route.params?.conversationId;
+  const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [wsService] = useState(() => WebSocketService.getInstance());
+  const flatListRef = useRef<FlatList<Message> | null>(null);
+  const [conversation, setConversation] = useState<any>(null);
 
   useEffect(() => {
-    const loadUserInfo = async () => {
-      const userInfo = await StorageService.getUserInfo();
-      console.log('Current user info:', userInfo);
-      setCurrentUser(userInfo);
+    const loadCurrentUser = async () => {
+      const user = await StorageService.getUserInfo();
+      if (user) {
+        setCurrentUser(user);
+      }
     };
-    loadUserInfo();
+    loadCurrentUser();
   }, []);
 
   useEffect(() => {
-    const loadConversationInfo = async () => {
-      if (!conversationId || !currentUser) return;
+    const loadMessages = async () => {
+      try {
+        setLoading(true);
+        const response = await ConversationService.getMessages(conversationId);
+        // Sort messages by created_at in descending order (newest first)
+        const sortedMessages = response.data.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setMessages(sortedMessages);
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMessages();
+  }, [conversationId]);
+
+  useEffect(() => {
+    // Handle incoming messages
+    const handleMessage = (message: WebSocketMessage) => {
+      if (message.type === 'MESSAGE' && message.payload.conversation_id === conversationId) {
+        // Map WebSocket message to Message interface
+        const mappedMessage: Message = {
+          message_id: message.payload.id,
+          body: message.payload.body,
+          type: message.payload.type,
+          created_at: message.payload.created_at,
+          updated_at: message.payload.updated_at,
+          conversation_id: message.payload.conversation_id,
+          user: {
+            user_id: message.payload.user_id,
+            full_name: message.payload.user.full_name,
+            avatar: message.payload.user.avatar || 'https://via.placeholder.com/40'
+          }
+        };
+        // Add new message to the beginning of the list
+        setMessages(prevMessages => [mappedMessage, ...prevMessages]);
+      }
+    };
+
+    wsService.onMessage(handleMessage);
+
+    return () => {
+      wsService.offMessage(handleMessage);
+    };
+  }, [conversationId, wsService]);
+
+  useEffect(() => {
+    const fetchConversation = async () => {
       try {
         const response = await ConversationService.getConversationById(conversationId);
         if (response?.data) {
-          let conversationTitle = response.data.title;
-          
+          setConversation(response.data);
+          // Set title based on conversation type
           if (response.data.type === 'DM') {
-            const otherMember = response.data.members.find(
-              member => member.user_id !== currentUser.user_id
-            );
-            if (otherMember) {
-              conversationTitle = otherMember.full_name;
+            // For DM, show other user's name
+            const otherUser = response.data.members.find(m => m.user_id !== currentUser?.user_id);
+            if (otherUser) {
+              navigation.setOptions({
+                title: otherUser.full_name
+              });
             }
-          } else if (response.data.type === 'GROUP') {
+          } else {
+            // For group, combine member names
             const memberNames = response.data.members
               .map(member => member.full_name)
               .join(', ');
-            
-            if (memberNames.length > 20) {
-              conversationTitle = memberNames.substring(0, 20) + '...';
-            } else {
-              conversationTitle = memberNames;
-            }
+            navigation.setOptions({
+              title: memberNames || 'Group Chat'
+            });
           }
-
-          setConversationName(conversationTitle);
-          navigation.setOptions({
-            headerTitle: () => (
-              <View style={styles.headerTitleContainer}>
-                <Text style={styles.headerTitle} numberOfLines={1}>
-                  {conversationTitle}
-                </Text>
-                {response.data.type === 'GROUP' && (
-                  <Text style={styles.headerSubtitle}>
-                    {response.data.members.length} members
-                  </Text>
-                )}
-              </View>
-            ),
-            headerRight: () => (
-              <TouchableOpacity style={styles.headerRight}>
-                <Image 
-                  source={{ uri: response.data.avatar }} 
-                  style={styles.headerAvatar}
-                />
-              </TouchableOpacity>
-            ),
-          });
         }
       } catch (error) {
-        console.error('Error loading conversation info:', error);
+        console.error('Error fetching conversation:', error);
       }
     };
-    loadConversationInfo();
-  }, [conversationId, navigation, currentUser]);
 
-  const loadMessages = useCallback(async (shouldRefresh = false) => {
-    if (!conversationId) return;
-    
-    try {
-      setLoading(true);
-      const lastMessageId = shouldRefresh ? undefined : messages[messages.length - 1]?.message_id;
-      const response = await ConversationService.getMessages(conversationId, lastMessageId);
-      
-      if (!response?.data) {
-        setHasMore(false);
-        return;
-      }
-
-      if (shouldRefresh) {
-        setMessages(response.data);
-      } else {
-        setMessages(prev => [...prev, ...response.data]);
-      }
-      setHasMore(response.data.length === ITEMS_PER_PAGE);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [conversationId, messages]);
-
-  useEffect(() => {
-    if (conversationId) {
-      loadMessages(true);
-    }
-  }, [conversationId]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadMessages(true);
-  };
-
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      loadMessages(false);
-    }
-  };
+    fetchConversation();
+  }, [conversationId, currentUser, navigation]);
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !conversationId || !currentUser) return;
+    if (!messageText.trim() || !currentUser) return;
 
     try {
-      const response = await ConversationService.sendMessage({
+      setLoading(true);
+      await ConversationService.sendMessage({
         type: 'text',
         body: messageText.trim(),
         conversation_id: conversationId,
         user_online_id: "currentUser.user_online_id"
       });
-
-      if (response?.data) {
-        const msg = response.data;
-        msg.user = {
-          user_id: currentUser?.user_id,
-          full_name: currentUser?.username,
-          avatar: currentUser?.avatar || '',
-        };
-        setMessages(prev => [msg, ...prev]);
-        setMessageText('');
-      }
+      setMessageText('');
     } catch (error) {
       console.error('Error sending message:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
-    const isMyMessage = currentUser?.user_id === item.user.user_id;
-    
+    const isCurrentUser = String(item.user?.user_id) === String(currentUser?.user_id);
+
     return (
       <View style={[
-        styles.messageWrapper,
-        isMyMessage ? styles.myMessageWrapper : styles.otherMessageWrapper
+        styles.messageContainer,
+        isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage
       ]}>
-        {!isMyMessage && (
-          <View style={styles.userInfo}>
-            <Image 
-              source={{ uri: item.user.avatar }} 
-              style={styles.avatar}
-            />
-            <Text style={styles.userName}>{item.user.full_name}</Text>
-          </View>
+        {!isCurrentUser && (
+          <Image
+            source={{ uri: item.user?.avatar || 'https://via.placeholder.com/40' }}
+            style={styles.avatar}
+          />
         )}
         <View style={[
-          styles.messageContainer,
-          isMyMessage ? styles.myMessage : styles.otherMessage
+          styles.messageBubble,
+          isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble
         ]}>
+          {!isCurrentUser && (
+            <Text style={styles.userName}>{item.user?.full_name}</Text>
+          )}
           <Text style={[
             styles.messageText,
-            isMyMessage ? styles.myMessageText : styles.otherMessageText
-          ]}>{item.body}</Text>
+            isCurrentUser ? styles.currentUserMessageText : styles.otherUserMessageText
+          ]}>
+            {item.body}
+          </Text>
           <Text style={[
             styles.messageTime,
-            isMyMessage ? styles.myMessageTime : styles.otherMessageTime
+            isCurrentUser ? styles.currentUserMessageTime : styles.otherUserMessageTime
           ]}>
             {new Date(item.created_at).toLocaleTimeString()}
           </Text>
@@ -215,48 +182,52 @@ const ConversationDetailScreen = () => {
     );
   };
 
+  // Combine messages from API and WebSocket
+  const allMessages = [...messages, ...wsMessages];
+
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.keyboardAvoidingView}
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <FlatList
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={item => item.message_id}
-          contentContainerStyle={styles.list}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          inverted
-          ListFooterComponent={
-            loading && !refreshing ? (
-              <ActivityIndicator style={styles.loader} color="#007AFF" />
-            ) : null
-          }
-        />
-        
+        {loading && messages.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+          </View>
+        ) : (
+          <FlatList
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={item => item.message_id || `${item.created_at}-${item.user?.user_id}`}
+            contentContainerStyle={styles.messagesList}
+            inverted={true}
+            ref={flatListRef}
+          />
+        )}
+
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
+            placeholder="Type a message..."
             value={messageText}
             onChangeText={setMessageText}
-            placeholder={t('messages.typeMessage')}
             multiline
-            maxLength={1000}
           />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.sendButton,
-              !messageText.trim() && styles.sendButtonDisabled
+              (!messageText.trim() || loading) && styles.sendButtonDisabled
             ]}
             onPress={handleSendMessage}
-            disabled={!messageText.trim()}
+            disabled={!messageText.trim() || loading}
           >
-            <MaterialIcons name="send" size={24} color={messageText.trim() ? '#007AFF' : '#999'} />
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <MaterialIcons name="send" size={24} color="#fff" />
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -269,82 +240,68 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  keyboardAvoidingView: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  list: {
-    flexGrow: 1,
+  messagesList: {
     padding: 16,
   },
-  messageWrapper: {
-    marginVertical: 8,
-  },
-  myMessageWrapper: {
-    alignItems: 'flex-end',
-  },
-  otherMessageWrapper: {
-    alignItems: 'flex-start',
-  },
-  userInfo: {
+  messageContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 16,
+    maxWidth: '80%',
+  },
+  currentUserMessage: {
+    alignSelf: 'flex-end',
+    marginLeft: 50,
+  },
+  otherUserMessage: {
+    alignSelf: 'flex-start',
+    marginRight: 50,
   },
   avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     marginRight: 8,
+  },
+  messageBubble: {
+    padding: 12,
+    borderRadius: 16,
+    maxWidth: '100%',
+  },
+  currentUserBubble: {
+    backgroundColor: '#007AFF',
+    borderTopRightRadius: 4,
+  },
+  otherUserBubble: {
+    backgroundColor: '#E5E5EA',
+    borderTopLeftRadius: 4,
   },
   userName: {
     fontSize: 12,
     color: '#666',
-  },
-  messageContainer: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 16,
-  },
-  myMessage: {
-    backgroundColor: '#007AFF',
-    borderTopRightRadius: 4,
-    marginLeft: '20%',
-  },
-  otherMessage: {
-    backgroundColor: '#E5E5EA',
-    borderTopLeftRadius: 4,
-    marginRight: '20%',
+    marginBottom: 4,
   },
   messageText: {
     fontSize: 16,
-  },
-  myMessageText: {
-    color: '#fff',
-  },
-  otherMessageText: {
     color: '#000',
   },
   messageTime: {
-    fontSize: 12,
+    fontSize: 10,
+    color: '#666',
     marginTop: 4,
     alignSelf: 'flex-end',
   },
-  myMessageTime: {
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  otherMessageTime: {
-    color: '#666',
-  },
-  loader: {
-    padding: 16,
-  },
   inputContainer: {
     flexDirection: 'row',
-    padding: 8,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
-    backgroundColor: '#fff',
     alignItems: 'flex-end',
+    backgroundColor: '#fff',
   },
   input: {
     flex: 1,
@@ -360,38 +317,25 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButtonDisabled: {
-    opacity: 0.5,
+    backgroundColor: '#ccc',
   },
-  headerLeft: {
-    marginLeft: 16,
+  currentUserMessageText: {
+    color: '#FFFFFF',
   },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  otherUserMessageText: {
+    color: '#000000',
   },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
+  currentUserMessageTime: {
+    color: '#FFFFFF',
+    opacity: 0.8,
   },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  headerRight: {
-    marginRight: 16,
-  },
-  headerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  otherUserMessageTime: {
+    color: '#666666',
   },
 });
 

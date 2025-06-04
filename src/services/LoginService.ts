@@ -2,19 +2,17 @@ import { LoginRequest, LoginResponse } from "../types/auth";
 import * as SecureStore from "expo-secure-store";
 import HttpService from "./HttpService";
 import { API_CONFIG } from "../config";
+import WebSocketService from "./WebSocketService";
 
 export const TOKEN_KEY = "auth_token";
 
 class LoginService {
   async login(data: LoginRequest): Promise<LoginResponse> {
     try {
-      console.log("Attempting login with:", { email: data.email });
-
       const loginData = await HttpService.post<LoginResponse>(
         "/user/login",
         data
       );
-      console.log("Login successful:", loginData);
 
       // Extract access token from response
       const accessToken = loginData.data.access_token;
@@ -24,7 +22,9 @@ class LoginService {
 
       // Save token to SecureStore
       await SecureStore.setItemAsync(TOKEN_KEY, accessToken);
-      console.log("Token saved to SecureStore");
+
+      // Connect WebSocket after successful login
+      await WebSocketService.getInstance().connect();
 
       return loginData;
     } catch (error) {
@@ -47,8 +47,9 @@ class LoginService {
 
   async logout(): Promise<void> {
     try {
+      // Disconnect WebSocket before logout
+      WebSocketService.getInstance().disconnect();
       await SecureStore.deleteItemAsync(TOKEN_KEY);
-      console.log("Token removed from SecureStore");
     } catch (error) {
       console.error("Error removing token from SecureStore:", error);
     }

@@ -107,7 +107,7 @@ const LoginScreen = ({ navigation }: any) => {
                     }
                   }}
                   icon="email"
-                  placeholder="Enter your email"
+                  placeholder={t('common.email')}
                 />
               )}
             />

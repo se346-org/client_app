@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import ConversationService from '../services/ConversationService';
 import UserService from '../services/UserService';
 import StorageService from '../services/StorageService';
@@ -19,6 +20,7 @@ import { UserInfo } from '../types/user';
 
 const NewConversationScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [searchText, setSearchText] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<UserInfo[]>([]);
   const [searchResults, setSearchResults] = useState<UserInfo[]>([]);
@@ -36,14 +38,23 @@ const NewConversationScreen = () => {
     loadCurrentUser();
   }, []);
 
+  useEffect(() => {
+    navigation.setOptions({
+      title: t('newConversation.title')
+    });
+  }, [navigation, t]);
+
   const handleSearch = async () => {
     if (searchText.length > 0) {
       try {
         const response = await UserService.searchUsers(searchText);
-        console.log("Search results:", response.data);
-        setSearchResults(response.data);
+        // Filter out duplicate users based on user_id
+        const uniqueUsers = response.data.filter((user, index, self) =>
+          index === self.findIndex((u) => u.user_id === user.user_id)
+        );
+        setSearchResults(uniqueUsers);
       } catch (error) {
-        console.error('Error searching users:', error);
+        console.error(t('newConversation.error.search'));
       }
     } else {
       setSearchResults([]);
@@ -65,16 +76,13 @@ const NewConversationScreen = () => {
   const handleSendMessage = async () => {
     if (selectedUsers.length === 0 || !messageText.trim() || !currentUser) return;
 
-    
     try {
       const members = [...selectedUsers, currentUser];
       setLoading(true);
       // Create conversation first
-      console.log("Creating conversation with members:", selectedUsers.map(user => user.user_id));
       const conversationResponse = await ConversationService.createConversation({
-        type: 'GROUP',
+        type: selectedUsers.length === 1 ? 'DM' : 'GROUP',
         members: members.map(user => user.user_id),
-
       });
 
       if (conversationResponse?.data) {
@@ -86,13 +94,13 @@ const NewConversationScreen = () => {
           user_online_id: "currentUser.user_online_id"
         });
 
-        // Navigate to conversation detail
-        navigation.navigate('ConversationDetail', {
-          conversationId: conversationResponse.data.conversation_id,
+        // Replace current screen with ConversationDetail
+        navigation.replace('ConversationDetail', { 
+          conversationId: conversationResponse.data.conversation_id 
         });
       }
     } catch (error) {
-      console.error('Error creating conversation:', error);
+      console.error(t('newConversation.error.create'));
     } finally {
       setLoading(false);
     }
@@ -115,11 +123,14 @@ const NewConversationScreen = () => {
   );
 
   const renderSearchResult = ({ item }: { item: UserInfo }) => {
-    console.log("Rendering search result item:", item);
+    // Check if user is already selected
+    const isSelected = selectedUsers.some(user => user.user_id === item.user_id);
+    
     return (
       <TouchableOpacity
         style={styles.searchResultItem}
         onPress={() => handleSelectUser(item)}
+        disabled={isSelected}
       >
         <Image
           source={{ uri: item.avatar || 'https://via.placeholder.com/40' }}
@@ -131,12 +142,12 @@ const NewConversationScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search users..."
+            placeholder={t('newConversation.searchPlaceholder')}
             value={searchText}
             onChangeText={setSearchText}
             onSubmitEditing={handleSearch}
@@ -153,11 +164,14 @@ const NewConversationScreen = () => {
       {searchResults.length > 0 && (
         <View style={styles.searchResultsContainer}>
           <FlatList
-            data={searchResults}
+            data={searchResults.filter(user => !selectedUsers.some(selected => selected.user_id === user.user_id))}
             renderItem={renderSearchResult}
-            keyExtractor={item => item.user_id}
+            keyExtractor={item => `search-${item.user_id}`}
             style={styles.searchResultsList}
             contentContainerStyle={styles.searchResultsContent}
+            ListEmptyComponent={
+              <Text style={styles.noResults}>{t('newConversation.noResults')}</Text>
+            }
           />
         </View>
       )}
@@ -176,7 +190,7 @@ const NewConversationScreen = () => {
         <View style={styles.messageContainer}>
           <TextInput
             style={styles.messageInput}
-            placeholder="Type a message..."
+            placeholder={t('newConversation.messagePlaceholder')}
             value={messageText}
             onChangeText={setMessageText}
             multiline
@@ -316,6 +330,11 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#ccc',
+  },
+  noResults: {
+    textAlign: 'center',
+    color: '#666',
+    padding: 16,
   },
 });
 

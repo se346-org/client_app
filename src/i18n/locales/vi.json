@@ -3,7 +3,7 @@
     "welcome": "Chào mừng trở lại!",
     "signIn": "Đăng nhập",
     "signUp": "Đăng ký",
-    "email": "Email",
+    "email": "Nhập email của bạn",
     "password": "Mật khẩu",
     "forgotPassword": "Quên mật khẩu?",
     "noAccount": "Chưa có tài khoản?",
@@ -13,5 +13,37 @@
     "required": "{{field}} không được để trống",
     "invalidEmail": "Email không hợp lệ",
     "minLength": "{{field}} phải có ít nhất {{min}} ký tự"
+  },
+  "conversations": {
+    "title": "Cuộc hội thoại",
+    "empty": "Chưa có cuộc hội thoại nào",
+    "unknown": "Không xác định",
+    "new": "Tạo cuộc hội thoại mới",
+    "group": "Nhóm chat",
+    "direct": "Chat riêng",
+    "lastMessage": "Tin nhắn cuối",
+    "timeAgo": "{{time}} trước",
+    "now": "Vừa xong",
+    "minutes": "phút",
+    "hours": "giờ",
+    "days": "ngày",
+    "weeks": "tuần",
+    "months": "tháng",
+    "years": "năm"
+  },
+  "newConversation": {
+    "title": "Tạo cuộc hội thoại mới",
+    "searchPlaceholder": "Tìm kiếm người dùng...",
+    "messagePlaceholder": "Nhập tin nhắn...",
+    "selectedUsers": "Người đã chọn",
+    "searchResults": "Kết quả tìm kiếm",
+    "noResults": "Không tìm thấy kết quả",
+    "send": "Gửi",
+    "sending": "Đang gửi...",
+    "error": {
+      "search": "Lỗi khi tìm kiếm người dùng",
+      "create": "Lỗi khi tạo cuộc hội thoại",
+      "send": "Lỗi khi gửi tin nhắn"
+    }
   }
 } 

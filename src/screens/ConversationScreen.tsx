@@ -16,11 +16,13 @@ import { Conversation } from '../types/conversation';
 import { formatDistanceToNow } from 'date-fns';
 import StorageService from '../services/StorageService';
 import { UserInfo } from '../types/user';
+import WebSocketService, { WebSocketMessage } from '../services/WebSocketService';
+import { vi, enUS } from 'date-fns/locale';
 
 const ITEMS_PER_PAGE = 20;
 
 const ConversationScreen = ({ navigation }: any) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -36,8 +38,67 @@ const ConversationScreen = ({ navigation }: any) => {
     loadUserInfo();
   }, []);
 
+  useEffect(() => {
+    const handleWebSocketMessage = async (message: WebSocketMessage) => {
+      if (message.type === 'UPDATE_LAST_MESSAGE') {
+        setConversations(prevConversations => {
+          const updatedConversations = prevConversations.map(conversation => {
+            if (conversation.conversation_id === message.payload.id) {
+              return {
+                ...conversation,
+                last_message: {
+                  ...message.payload.last_message,
+                  message_id: message.payload.last_message.id,
+                  user: {
+                    user_id: message.payload.last_message.user_id,
+                    full_name: message.payload.last_message.user.full_name,
+                    user_type: message.payload.last_message.user.type
+                  }
+                },
+                last_message_id: message.payload.last_message.id,
+                updated_at: message.payload.last_message.created_at
+              };
+            }
+            return conversation;
+          });
+
+          // Sort conversations by updated_at
+          const sortedConversations = updatedConversations.sort((a, b) => 
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          );
+          return sortedConversations;
+        });
+      } else if (message.type === 'MESSAGE') {
+        // Check if conversation exists in current state
+        const conversationExists = conversations.some(
+          conv => conv.conversation_id === message.payload.conversation_id
+        );
+
+        if (!conversationExists) {
+          // If conversation doesn't exist, fetch latest conversations
+          try {
+            const response = await ConversationService.getConversations();
+            if (response?.data) {
+              setConversations(response.data);
+            }
+          } catch (error) {
+            console.error('Error fetching conversations:', error);
+          }
+        }
+      }
+    };
+
+    // Connect to WebSocket
+    WebSocketService.getInstance().connect();
+    WebSocketService.getInstance().onMessage(handleWebSocketMessage);
+
+    return () => {
+      WebSocketService.getInstance().offMessage(handleWebSocketMessage);
+    };
+  }, [conversations]);
+
   const getConversationTitle = (conversation: Conversation) => {
-    if (!currentUser) return conversation.title;
+    if (!currentUser) return '';
 
     if (conversation.type === 'DM') {
       const otherMember = conversation.members.find(
@@ -57,7 +118,7 @@ const ConversationScreen = ({ navigation }: any) => {
       return memberNames;
     }
 
-    return conversation.title;
+    return '';
   };
 
   const getLastMessageId = useCallback(() => {
@@ -125,42 +186,82 @@ const ConversationScreen = ({ navigation }: any) => {
     }
   };
 
-  const renderConversation = ({ item }: { item: Conversation }) => (
-    <TouchableOpacity
-      style={styles.conversationItem}
-      onPress={() => handleConversationPress(item)}
-    >
-      <View style={styles.avatarContainer}>
-        {item.avatar ? (
-          <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        ) : (
+  const formatTimeAgo = (date: Date) => {
+    const locale = i18n.language === 'vi' ? vi : enUS;
+    const distance = formatDistanceToNow(date, { 
+      addSuffix: true,
+      locale 
+    });
+    
+    // Replace English text with translated text
+    if (i18n.language === 'vi') {
+      return distance
+        .replace('about', 'khoảng')
+        .replace('less than', 'chưa đến')
+        .replace('over', 'hơn')
+        .replace('almost', 'gần')
+        .replace('minute', t('conversations.minutes'))
+        .replace('hour', t('conversations.hours'))
+        .replace('day', t('conversations.days'))
+        .replace('week', t('conversations.weeks'))
+        .replace('month', t('conversations.months'))
+        .replace('year', t('conversations.years'))
+        .replace('ago', t('conversations.timeAgo').replace('{{time}}', ''))
+        .replace('just now', t('conversations.now'));
+    }
+    
+    return distance;
+  };
+
+  const renderConversation = ({ item }: { item: Conversation }) => {
+    const isUnread = item.last_message && 
+      !item.last_message.is_read && 
+      item.last_message.user.user_id !== currentUser?.user_id;
+
+    return (
+      <TouchableOpacity
+        style={styles.conversationItem}
+        onPress={() => handleConversationPress(item)}
+      >
+        <View style={styles.avatarContainer}>
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <MaterialIcons name="person" size={24} color="#666" />
           </View>
-        )}
-        {item.unreadCount && item.unreadCount > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+          {isUnread && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadCount}>1</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.conversationInfo}>
+          <View style={styles.conversationHeader}>
+            <Text style={[
+              styles.name,
+              isUnread && styles.unreadName
+            ]}>
+              {getConversationTitle(item)}
+            </Text>
+            {item.last_message && (
+              <Text style={styles.time}>
+                {formatTimeAgo(new Date(item.last_message.created_at))}
+              </Text>
+            )}
           </View>
-        )}
-      </View>
-      <View style={styles.conversationInfo}>
-        <View style={styles.conversationHeader}>
-          <Text style={styles.name}>{getConversationTitle(item)}</Text>
-          {item.lastMessage && (
-            <Text style={styles.time}>
-              {formatDistanceToNow(new Date(item.lastMessage.createdAt), { addSuffix: true })}
+          {item.last_message && (
+            <Text 
+              style={[
+                styles.lastMessage,
+                isUnread && styles.unreadMessage
+              ]} 
+              numberOfLines={1}
+            >
+              {item.last_message.body}
             </Text>
           )}
         </View>
-        {item.lastMessage && (
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage.content}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -291,6 +392,14 @@ const styles = StyleSheet.create({
   },
   newChatButton: {
     padding: 8,
+  },
+  unreadName: {
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  unreadMessage: {
+    fontWeight: '600',
+    color: '#000',
   },
 });
 
