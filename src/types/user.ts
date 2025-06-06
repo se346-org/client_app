@@ -19,6 +19,19 @@ export interface UserSearchResponse {
   status: number;
 }
 
+export interface UploadAvatarResponse {
+  data: {
+    url: string;
+  };
+  message: string;
+  status: number;
+}
+
+export interface UpdateUserInfoRequest {
+  full_name?: string;
+  avatar?: string;
+}
+
 // export interface UserSearch {
 //   full_name: string;
 //   avatar: string;

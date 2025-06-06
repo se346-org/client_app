@@ -16,11 +16,6 @@ import './src/i18n';
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
-  Welcome: { username: string };
-  ForgotPassword: { username: string };
-  ToDoList: { username: string };
-  CreateToDo: { username: string };
-  ToDoDetail: { username: string, toDoId: string };
   Main: undefined;
   ConversationDetail: { conversationId: string };
   AddContact: undefined;

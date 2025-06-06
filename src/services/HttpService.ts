@@ -133,6 +133,19 @@ class HttpService {
       throw this.handleError(error as AxiosError);
     }
   }
+
+  async patch<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    try {
+      const response = await axios.patch<T>(`${BASE_URL}${url}`, data, config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
 }
 
 export default HttpService.getInstance();

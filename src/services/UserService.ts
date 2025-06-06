@@ -1,5 +1,11 @@
 import HttpService from "./HttpService";
-import { UserInfoResponse, UserSearchResponse } from "../types/user";
+import {
+  UpdateUserInfoRequest,
+  UploadAvatarResponse,
+  UserInfo,
+  UserInfoResponse,
+  UserSearchResponse,
+} from "../types/user";
 
 class UserService {
   async getUserInfo(): Promise<UserInfoResponse> {
@@ -18,6 +24,30 @@ class UserService {
       );
     } catch (error) {
       console.error("Error searching users:", error);
+      throw error;
+    }
+  }
+
+  async uploadAvatar(formData: FormData): Promise<UploadAvatarResponse> {
+    try {
+      console.log("formData", formData);
+      return await HttpService.post<UploadAvatarResponse>(
+        "/auth/upload",
+        formData
+      );
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      throw error;
+    }
+  }
+
+  async updateUserInfo(
+    userInfo: UpdateUserInfoRequest
+  ): Promise<UserInfoResponse> {
+    try {
+      return await HttpService.patch<UserInfoResponse>("/auth/user", userInfo);
+    } catch (error) {
+      console.error("Error updating user info:", error);
       throw error;
     }
   }
