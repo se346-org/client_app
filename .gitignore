@@ -81,3 +81,9 @@ web-build/
 
 package-lock.json
 yarn.lock
+
+# Firebase config files
+google-services.json
+GoogleService-Info.plist
+
+src/config/firebase.ts

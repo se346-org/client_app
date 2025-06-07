@@ -219,22 +219,22 @@ const ConversationScreen = ({ navigation }: any) => {
       item.last_message.user.user_id !== currentUser?.user_id;
 
     return (
-      <TouchableOpacity
-        style={styles.conversationItem}
-        onPress={() => handleConversationPress(item)}
-      >
-        <View style={styles.avatarContainer}>
+    <TouchableOpacity
+      style={styles.conversationItem}
+      onPress={() => handleConversationPress(item)}
+    >
+      <View style={styles.avatarContainer}>
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <MaterialIcons name="person" size={24} color="#666" />
           </View>
           {isUnread && (
-            <View style={styles.unreadBadge}>
+          <View style={styles.unreadBadge}>
               <Text style={styles.unreadCount}>1</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.conversationInfo}>
-          <View style={styles.conversationHeader}>
+          </View>
+        )}
+      </View>
+      <View style={styles.conversationInfo}>
+        <View style={styles.conversationHeader}>
             <Text style={[
               styles.name,
               isUnread && styles.unreadName
@@ -242,11 +242,11 @@ const ConversationScreen = ({ navigation }: any) => {
               {getConversationTitle(item)}
             </Text>
             {item.last_message && (
-              <Text style={styles.time}>
+            <Text style={styles.time}>
                 {formatTimeAgo(new Date(item.last_message.created_at))}
-              </Text>
-            )}
-          </View>
+            </Text>
+          )}
+        </View>
           {item.last_message && (
             <Text 
               style={[
@@ -256,11 +256,11 @@ const ConversationScreen = ({ navigation }: any) => {
               numberOfLines={1}
             >
               {item.last_message.body}
-            </Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
   };
 
   useEffect(() => {

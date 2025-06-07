@@ -1,14 +1,21 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import * as SecureStore from "expo-secure-store";
 import { TOKEN_KEY } from "./LoginService";
-
-const BASE_URL = "http://localhost:8080";
+import { API_CONFIG } from "../config";
 
 class HttpService {
   private static instance: HttpService;
   private token: string | null = null;
 
   private constructor() {
+    // Cấu hình axios mặc định
+    axios.defaults.baseURL = API_CONFIG.BASE_URL;
+    axios.defaults.timeout = API_CONFIG.TIMEOUT;
+    axios.defaults.headers.common = {
+      ...axios.defaults.headers.common,
+      ...API_CONFIG.HEADERS,
+    };
+
     this.setupAxiosInterceptors();
   }
 
@@ -22,6 +29,13 @@ class HttpService {
   private async setupAxiosInterceptors() {
     axios.interceptors.request.use(
       async (config) => {
+        console.log("Making HTTP request:", {
+          url: config.url,
+          method: config.method,
+          baseURL: config.baseURL,
+          headers: config.headers,
+        });
+
         // Always get the latest token from SecureStore
         this.token = await SecureStore.getItemAsync(TOKEN_KEY);
         if (this.token) {
@@ -33,13 +47,32 @@ class HttpService {
         return config;
       },
       (error) => {
+        console.error("Request interceptor error:", error);
         return Promise.reject(error);
       }
     );
 
     axios.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log("HTTP response received:", {
+          status: response.status,
+          data: response.data,
+        });
+        return response;
+      },
       async (error: AxiosError) => {
+        console.error("HTTP response error:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+          code: error.code,
+          config: {
+            url: error.config?.url,
+            baseURL: error.config?.baseURL,
+            method: error.config?.method,
+          },
+        });
+
         if (error.response?.status === 401) {
           // Handle token expiration
           await this.handleTokenExpiration();
@@ -89,7 +122,7 @@ class HttpService {
     config?: AxiosRequestConfig
   ): Promise<T> {
     try {
-      const response = await axios.get<T>(`${BASE_URL}${url}`, {
+      const response = await axios.get<T>(`${API_CONFIG.BASE_URL}${url}`, {
         ...config,
         params,
       });
@@ -105,7 +138,11 @@ class HttpService {
     config?: AxiosRequestConfig
   ): Promise<T> {
     try {
-      const response = await axios.post<T>(`${BASE_URL}${url}`, data, config);
+      const response = await axios.post<T>(
+        `${API_CONFIG.BASE_URL}${url}`,
+        data,
+        config
+      );
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -118,7 +155,11 @@ class HttpService {
     config?: AxiosRequestConfig
   ): Promise<T> {
     try {
-      const response = await axios.put<T>(`${BASE_URL}${url}`, data, config);
+      const response = await axios.put<T>(
+        `${API_CONFIG.BASE_URL}${url}`,
+        data,
+        config
+      );
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -127,7 +168,10 @@ class HttpService {
 
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     try {
-      const response = await axios.delete<T>(`${BASE_URL}${url}`, config);
+      const response = await axios.delete<T>(
+        `${API_CONFIG.BASE_URL}${url}`,
+        config
+      );
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -140,7 +184,11 @@ class HttpService {
     config?: AxiosRequestConfig
   ): Promise<T> {
     try {
-      const response = await axios.patch<T>(`${BASE_URL}${url}`, data, config);
+      const response = await axios.patch<T>(
+        `${API_CONFIG.BASE_URL}${url}`,
+        data,
+        config
+      );
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
