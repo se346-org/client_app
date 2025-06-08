@@ -1,5 +1,9 @@
 # OSX
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
 
 # Xcode
 build/
@@ -30,12 +34,17 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
+android/app/debug.keystore
+android/app/release.keystore
+android/app/*.keystore
+android/app/*.jks
 
 # node.js
 node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
+.pnpm-debug.log
 
 # fastlane
 **/fastlane/report.xml
@@ -70,6 +79,7 @@ yarn-error.log
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/snippets
 
 # Watchman
 .watchmanconfig
@@ -77,13 +87,53 @@ yarn-error.log
 # Expo
 .expo/
 dist/
-web-build/ 
+web-build/
 
+# Package manager
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
 
 # Firebase config files
 google-services.json
 GoogleService-Info.plist
-
 src/config/firebase.ts
+
+# iOS specific
+ios/Pods/
+ios/build/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcshareddata/
+ios/*.xcodeproj/project.xcworkspace/xcshareddata/
+
+# Android specific
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/*.iml
+android/.idea/
+android/.settings/
+android/.project
+android/.classpath
+android/app/release/
+android/app/debug/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
