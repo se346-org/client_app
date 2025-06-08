@@ -16,7 +16,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import ConversationService from '../services/ConversationService';
 import StorageService from '../services/StorageService';
-import WebSocketService, { WebSocketMessage } from '../services/WebSocketService';
+import WebSocketService from '../services/WebSocketService';
+import { WebSocketMessage } from '../types/websocketmessage';
 import { Message } from '../types/message';
 
 const ConversationDetailScreen = () => {

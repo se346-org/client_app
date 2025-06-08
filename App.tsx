@@ -12,16 +12,8 @@ import ContactScreen from './src/screens/ContactScreen';
 import AccountScreen from './src/screens/AccountScreen';
 import NewConversationScreen from './src/screens/NewConversationScreen';
 import './src/i18n';
-
-export type RootStackParamList = {
-  Login: undefined;
-  Register: undefined;
-  Main: undefined;
-  ConversationDetail: { conversationId: string };
-  AddContact: undefined;
-  NewChat: undefined;
-  NewConversation: undefined;
-}
+import { RootStackParamList } from './src/types/navigation';
+import { navigationRef } from './src/services/NavigationService';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -86,7 +78,7 @@ const LogoutButton = ({ navigation }: any) => (
 
 export default function App() {
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         initialRouteName="Login"
         screenOptions={{

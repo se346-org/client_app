@@ -16,7 +16,8 @@ import { Conversation } from '../types/conversation';
 import { formatDistanceToNow } from 'date-fns';
 import StorageService from '../services/StorageService';
 import { UserInfo } from '../types/user';
-import WebSocketService, { WebSocketMessage } from '../services/WebSocketService';
+import WebSocketService from '../services/WebSocketService';
+import { WebSocketMessage } from '../types/websocketmessage';
 import { vi, enUS } from 'date-fns/locale';
 
 const ITEMS_PER_PAGE = 20;

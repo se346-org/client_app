@@ -29,13 +29,6 @@ class HttpService {
   private async setupAxiosInterceptors() {
     axios.interceptors.request.use(
       async (config) => {
-        console.log("Making HTTP request:", {
-          url: config.url,
-          method: config.method,
-          baseURL: config.baseURL,
-          headers: config.headers,
-        });
-
         // Always get the latest token from SecureStore
         this.token = await SecureStore.getItemAsync(TOKEN_KEY);
         if (this.token) {
@@ -54,25 +47,10 @@ class HttpService {
 
     axios.interceptors.response.use(
       (response) => {
-        console.log("HTTP response received:", {
-          status: response.status,
-          data: response.data,
-        });
         return response;
       },
       async (error: AxiosError) => {
-        console.error("HTTP response error:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-          code: error.code,
-          config: {
-            url: error.config?.url,
-            baseURL: error.config?.baseURL,
-            method: error.config?.method,
-          },
-        });
-
+        console.error("HTTP response error:", error);
         if (error.response?.status === 401) {
           // Handle token expiration
           await this.handleTokenExpiration();
