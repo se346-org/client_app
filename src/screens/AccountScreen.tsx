@@ -40,7 +40,7 @@ const AccountScreen = ({ navigation }: any) => {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
       navigation.navigate('Login');
     } catch (error) {
-      Alert.alert('Error', 'Failed to logout');
+      Alert.alert('Error', t('account.error.logout'));
     }
   };
 

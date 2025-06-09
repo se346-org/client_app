@@ -56,5 +56,14 @@
       "create": "Error creating conversation",
       "send": "Error sending message"
     }
+  },
+  "account": {
+    "editProfile": "Edit Profile",
+    "notifications": "Notifications",
+    "security": "Security",
+    "logout": "Logout",
+    "error": {
+      "logout": "Failed to logout"
+    }
   }
 } 

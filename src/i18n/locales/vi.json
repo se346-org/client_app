@@ -56,5 +56,14 @@
       "create": "Lỗi khi tạo cuộc hội thoại",
       "send": "Lỗi khi gửi tin nhắn"
     }
+  },
+  "account": {
+    "editProfile": "Chỉnh sửa thông tin",
+    "notifications": "Thông báo",
+    "security": "Bảo mật",
+    "logout": "Đăng xuất",
+    "error": {
+      "logout": "Đăng xuất thất bại"
+    }
   }
 } 
