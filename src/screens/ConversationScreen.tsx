@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +32,7 @@ const ConversationScreen = ({ navigation }: any) => {
   const [hasMore, setHasMore] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
   const loadingRef = useRef(false);
+  const appState = useRef(AppState.currentState);
 
   useEffect(() => {
     const loadUserInfo = async () => {
@@ -39,6 +42,78 @@ const ConversationScreen = ({ navigation }: any) => {
     loadUserInfo();
   }, []);
 
+  const getLastMessageId = useCallback(() => {
+    if (conversations.length === 0) return undefined;
+    return conversations[conversations.length - 1].last_message_id;
+  }, [conversations]);
+
+  const updateConversations = useCallback((newConversations: Conversation[], shouldRefresh: boolean) => {
+    if (shouldRefresh) {
+      setConversations(newConversations);
+    } else {
+      const existingIds = new Set(conversations.map(c => c.conversation_id));
+      const uniqueNewConversations = newConversations.filter(c => !existingIds.has(c.conversation_id));
+      setConversations(prev => [...prev, ...uniqueNewConversations]);
+    }
+    setHasMore(newConversations.length === ITEMS_PER_PAGE);
+  }, [conversations]);
+
+  const loadConversations = useCallback(async (shouldRefresh = false) => {
+    if (loadingRef.current) return;
+    
+    try {
+      loadingRef.current = true;
+      const lastMessageId = shouldRefresh ? undefined : getLastMessageId();
+      const response = await ConversationService.getConversations(lastMessageId);
+      
+      if (!response?.data) {
+        setHasMore(false);
+        return;
+      }
+
+      updateConversations(response.data, shouldRefresh);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setRefreshing(false)
+      loadingRef.current = false;
+    }
+  }, [getLastMessageId, updateConversations]);
+
+  // Add AppState listener
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
+    if (
+      appState.current.match(/inactive|background/) &&
+      nextAppState === 'active'
+    ) {
+      // App has come to the foreground
+      loadConversations(true);
+    }
+    appState.current = nextAppState;
+  }, [loadConversations]);
+
+  // Add navigation listener for screen focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Only refresh if we're not already loading
+      if (!loadingRef.current) {
+        loadConversations(true);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, loadConversations]);
+
+  // Update WebSocket message handler
   useEffect(() => {
     const handleWebSocketMessage = async (message: WebSocketMessage) => {
       if (message.type === 'UPDATE_LAST_MESSAGE') {
@@ -85,6 +160,31 @@ const ConversationScreen = ({ navigation }: any) => {
           } catch (error) {
             console.error('Error fetching conversations:', error);
           }
+        } else {
+          // If conversation exists, update it
+          setConversations(prevConversations => {
+            return prevConversations.map(conversation => {
+              if (conversation.conversation_id === message.payload.conversation_id) {
+                return {
+                  ...conversation,
+                  last_message: {
+                    ...message.payload,
+                    message_id: message.payload.id,
+                    user: {
+                      user_id: message.payload.user_id,
+                      full_name: message.payload.user.full_name,
+                      user_type: message.payload.user.type
+                    }
+                  },
+                  last_message_id: message.payload.id,
+                  updated_at: message.payload.created_at
+                };
+              }
+              return conversation;
+            }).sort((a, b) => 
+              new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+            );
+          });
         }
       }
     };
@@ -121,46 +221,6 @@ const ConversationScreen = ({ navigation }: any) => {
 
     return '';
   };
-
-  const getLastMessageId = useCallback(() => {
-    if (conversations.length === 0) return undefined;
-    return conversations[conversations.length - 1].last_message_id;
-  }, [conversations]);
-
-  const updateConversations = useCallback((newConversations: Conversation[], shouldRefresh: boolean) => {
-    if (shouldRefresh) {
-      setConversations(newConversations);
-    } else {
-      const existingIds = new Set(conversations.map(c => c.conversation_id));
-      const uniqueNewConversations = newConversations.filter(c => !existingIds.has(c.conversation_id));
-      setConversations(prev => [...prev, ...uniqueNewConversations]);
-    }
-    setHasMore(newConversations.length === ITEMS_PER_PAGE);
-  }, [conversations]);
-
-  const loadConversations = useCallback(async (shouldRefresh = false) => {
-    if (loadingRef.current) return;
-    
-    try {
-      loadingRef.current = true;
-      const lastMessageId = shouldRefresh ? undefined : getLastMessageId();
-      const response = await ConversationService.getConversations(lastMessageId);
-      
-      if (!response?.data) {
-        setHasMore(false);
-        return;
-      }
-
-      updateConversations(response.data, shouldRefresh);
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-      setRefreshing(false)
-      loadingRef.current = false;
-    }
-  }, [getLastMessageId, updateConversations]);
 
   const handleConversationPress = async (conversation: Conversation) => {
     try {
