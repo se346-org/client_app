@@ -1,12 +1,7 @@
+import { WS_CONFIG } from "../config";
+import { MessageCallback, WebSocketMessage } from "../types/websocketmessage";
 import LoginService from "./LoginService";
-
-export type WebSocketMessage = {
-  type: string;
-  payload: any;
-  ignore_user_onlines?: string[];
-};
-
-type MessageCallback = (message: WebSocketMessage) => void;
+import { AppState, AppStateStatus } from "react-native";
 
 class EventEmitter {
   private events: { [key: string]: MessageCallback[] } = {};
@@ -37,10 +32,33 @@ class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectTimeout = 3000;
   private isConnecting = false;
+  private appStateSubscription: any;
 
   private constructor() {
     this.eventEmitter = new EventEmitter();
+    this.setupAppStateListener();
   }
+
+  private setupAppStateListener() {
+    this.appStateSubscription = AppState.addEventListener(
+      "change",
+      this.handleAppStateChange
+    );
+  }
+
+  private handleAppStateChange = (nextAppState: AppStateStatus) => {
+    if (nextAppState === "active") {
+      // App has come to the foreground
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        console.log("App came to foreground, reconnecting WebSocket...");
+        this.connect();
+      }
+    } else if (nextAppState === "background" || nextAppState === "inactive") {
+      // App has gone to the background
+      console.log("App went to background, disconnecting WebSocket...");
+      this.disconnect();
+    }
+  };
 
   public static getInstance(): WebSocketService {
     if (!WebSocketService.instance) {
@@ -56,12 +74,12 @@ class WebSocketService {
 
     this.isConnecting = true;
     try {
-      const token = await LoginService.getToken();
+      const token = await LoginService.getInstance().getToken();
       if (!token) {
         throw new Error("No token available");
       }
 
-      this.ws = new WebSocket("ws://localhost:8080/ws");
+      this.ws = new WebSocket(`${WS_CONFIG.BASE_URL}/ws`);
 
       this.ws.onopen = () => {
         console.log("WebSocket connected");
@@ -121,11 +139,30 @@ class WebSocketService {
     }
   }
 
+  public cleanup() {
+    this.disconnect();
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+    }
+  }
+
   public sendMessage(message: WebSocketMessage) {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
+      try {
+        this.ws.send(JSON.stringify(message));
+      } catch (error) {
+        console.error("Error sending WebSocket message:", error);
+        this.handleReconnect();
+        throw new Error(
+          "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn."
+        );
+      }
     } else {
       console.error("WebSocket is not connected");
+      this.handleReconnect();
+      throw new Error(
+        "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn."
+      );
     }
   }
 

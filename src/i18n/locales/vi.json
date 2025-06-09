@@ -7,12 +7,25 @@
     "password": "Mật khẩu",
     "forgotPassword": "Quên mật khẩu?",
     "noAccount": "Chưa có tài khoản?",
-    "continue": "Đăng nhập để tiếp tục"
+    "continue": "Đăng nhập để tiếp tục",
+    "createAccount": "Tạo tài khoản",
+    "registerSubtitle": "Đăng ký để bắt đầu",
+    "fullName": "Họ và tên",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "haveAccount": "Đã có tài khoản?",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận"
+  },
+  "tabs": {
+    "conversations": "Trò chuyện",
+    "contacts": "Danh bạ",
+    "account": "Tài khoản"
   },
   "validation": {
     "required": "{{field}} không được để trống",
     "invalidEmail": "Email không hợp lệ",
-    "minLength": "{{field}} phải có ít nhất {{min}} ký tự"
+    "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
+    "passwordMismatch": "Mật khẩu không khớp"
   },
   "conversations": {
     "title": "Cuộc hội thoại",
@@ -44,6 +57,38 @@
       "search": "Lỗi khi tìm kiếm người dùng",
       "create": "Lỗi khi tạo cuộc hội thoại",
       "send": "Lỗi khi gửi tin nhắn"
+    }
+  },
+  "account": {
+    "editProfile": "Chỉnh sửa thông tin",
+    "notifications": "Thông báo",
+    "security": "Bảo mật",
+    "logout": "Đăng xuất",
+    "error": {
+      "logout": "Đăng xuất thất bại"
+    }
+  },
+  "conversation": {
+    "menu": {
+      "title": "Tùy chọn cuộc hội thoại",
+      "search": "Tìm kiếm",
+      "groupInfo": "Thông tin nhóm",
+      "viewMembers": "Xem thành viên",
+      "muteNotifications": "Tắt thông báo",
+      "clearChat": "Xóa cuộc hội thoại",
+      "clearChatConfirm": "Bạn có chắc chắn muốn xóa tất cả tin nhắn? Hành động này không thể hoàn tác.",
+      "leaveGroup": "Rời nhóm",
+      "leaveGroupConfirm": "Bạn có chắc chắn muốn rời khỏi nhóm này?"
+    },
+    "search": {
+      "placeholder": "Tìm kiếm tin nhắn..."
+    },
+    "members": {
+      "title": "Thành viên nhóm"
+    },
+    "error": {
+      "leaveGroup": "Lỗi khi rời nhóm",
+      "clearChat": "Lỗi khi xóa cuộc hội thoại"
     }
   }
 } 

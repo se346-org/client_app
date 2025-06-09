@@ -43,7 +43,7 @@ const LoginScreen = ({ navigation }: any) => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true);
-      const loginResponse = await LoginService.login(data);
+      const loginResponse = await LoginService.getInstance().login(data);
       
       // Fetch user info after successful login
       const userInfoResponse = await UserService.getUserInfo();

@@ -110,12 +110,36 @@ class ConversationService {
   }
 
   async sendMessage(data: SendMessageRequest): Promise<SendMessageResponse> {
-    try {
-      return await HttpService.post<SendMessageResponse>("/auth/message", data);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      throw error;
+    const maxRetries = 3;
+    let retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try {
+        return await HttpService.post<SendMessageResponse>(
+          "/auth/message",
+          data
+        );
+      } catch (error) {
+        console.error(
+          `Error sending message (attempt ${retryCount + 1}/${maxRetries}):`,
+          error
+        );
+        retryCount++;
+
+        if (retryCount === maxRetries) {
+          throw new Error(
+            "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn."
+          );
+        }
+
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, 1000 * retryCount));
+      }
     }
+
+    throw new Error(
+      "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn."
+    );
   }
 }
 

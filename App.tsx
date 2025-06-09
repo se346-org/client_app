@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import ConversationScreen from './src/screens/ConversationScreen';
@@ -12,21 +13,15 @@ import ContactScreen from './src/screens/ContactScreen';
 import AccountScreen from './src/screens/AccountScreen';
 import NewConversationScreen from './src/screens/NewConversationScreen';
 import './src/i18n';
-
-export type RootStackParamList = {
-  Login: undefined;
-  Register: undefined;
-  Main: undefined;
-  ConversationDetail: { conversationId: string };
-  AddContact: undefined;
-  NewChat: undefined;
-  NewConversation: undefined;
-}
+import { RootStackParamList } from './src/types/navigation';
+import { navigationRef } from './src/services/NavigationService';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
+  const { t } = useTranslation();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -54,21 +49,21 @@ const MainTabs = () => {
         name="Conversations" 
         component={ConversationScreen}
         options={{
-          title: 'Chats',
+          title: t('tabs.conversations'),
         }}
       />
       <Tab.Screen 
         name="Contacts" 
         component={ContactScreen}
         options={{
-          title: 'Contacts',
+          title: t('tabs.contacts'),
         }}
       />
       <Tab.Screen 
         name="Account" 
         component={AccountScreen}
         options={{
-          title: 'Account',
+          title: t('tabs.account'),
         }}
       />
     </Tab.Navigator>
@@ -86,7 +81,7 @@ const LogoutButton = ({ navigation }: any) => (
 
 export default function App() {
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         initialRouteName="Login"
         screenOptions={{

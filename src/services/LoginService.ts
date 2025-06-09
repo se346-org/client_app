@@ -1,12 +1,27 @@
 import { LoginRequest, LoginResponse } from "../types/auth";
 import * as SecureStore from "expo-secure-store";
 import HttpService from "./HttpService";
-import { API_CONFIG } from "../config";
 import WebSocketService from "./WebSocketService";
+import { NotificationService } from "./NotificationService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const TOKEN_KEY = "auth_token";
 
 class LoginService {
+  private static instance: LoginService;
+  private notificationService: NotificationService;
+
+  private constructor() {
+    this.notificationService = NotificationService.getInstance();
+  }
+
+  public static getInstance(): LoginService {
+    if (!LoginService.instance) {
+      LoginService.instance = new LoginService();
+    }
+    return LoginService.instance;
+  }
+
   async login(data: LoginRequest): Promise<LoginResponse> {
     try {
       const loginData = await HttpService.post<LoginResponse>(
@@ -22,13 +37,26 @@ class LoginService {
 
       // Save token to SecureStore
       await SecureStore.setItemAsync(TOKEN_KEY, accessToken);
+      console.log("Token saved to SecureStore");
 
       // Connect WebSocket after successful login
       await WebSocketService.getInstance().connect();
+      console.log("WebSocket connected");
+
+      // Check and register FCM token if needed
+      const fcmToken = await this.notificationService.getFCMToken();
+      if (fcmToken) {
+        const registered = await this.notificationService.registerFCMToken(
+          fcmToken
+        );
+        if (registered) {
+          console.log("FCM token registered");
+        }
+      }
 
       return loginData;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error details:", error);
       if (error instanceof Error) {
         throw error;
       }
@@ -45,15 +73,21 @@ class LoginService {
     }
   }
 
-  async logout(): Promise<void> {
+  public async logout() {
     try {
-      // Disconnect WebSocket before logout
-      WebSocketService.getInstance().disconnect();
+      // Unregister FCM token first
+      await this.notificationService.unregisterFCMToken();
+      console.log("FCM token unregistered");
+
+      // Clear auth token
       await SecureStore.deleteItemAsync(TOKEN_KEY);
+      // Clear user data
+      await AsyncStorage.removeItem("user_data");
     } catch (error) {
-      console.error("Error removing token from SecureStore:", error);
+      console.error("Logout failed:", error);
+      throw error;
     }
   }
 }
 
-export default new LoginService();
+export default LoginService;
