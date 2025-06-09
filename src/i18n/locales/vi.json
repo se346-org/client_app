@@ -7,12 +7,23 @@
     "password": "Mật khẩu",
     "forgotPassword": "Quên mật khẩu?",
     "noAccount": "Chưa có tài khoản?",
-    "continue": "Đăng nhập để tiếp tục"
+    "continue": "Đăng nhập để tiếp tục",
+    "createAccount": "Tạo tài khoản",
+    "registerSubtitle": "Đăng ký để bắt đầu",
+    "fullName": "Họ và tên",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "haveAccount": "Đã có tài khoản?"
+  },
+  "tabs": {
+    "conversations": "Trò chuyện",
+    "contacts": "Danh bạ",
+    "account": "Tài khoản"
   },
   "validation": {
     "required": "{{field}} không được để trống",
     "invalidEmail": "Email không hợp lệ",
-    "minLength": "{{field}} phải có ít nhất {{min}} ký tự"
+    "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
+    "passwordMismatch": "Mật khẩu không khớp"
   },
   "conversations": {
     "title": "Cuộc hội thoại",

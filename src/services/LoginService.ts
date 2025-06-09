@@ -43,11 +43,15 @@ class LoginService {
       await WebSocketService.getInstance().connect();
       console.log("WebSocket connected");
 
-      // Register FCM token after successful login
+      // Check and register FCM token if needed
       const fcmToken = await this.notificationService.getFCMToken();
       if (fcmToken) {
-        await this.notificationService.registerFCMToken(fcmToken);
-        console.log("FCM token registered");
+        const registered = await this.notificationService.registerFCMToken(
+          fcmToken
+        );
+        if (registered) {
+          console.log("FCM token registered");
+        }
       }
 
       return loginData;
@@ -71,10 +75,12 @@ class LoginService {
 
   public async logout() {
     try {
+      // Unregister FCM token first
       await this.notificationService.unregisterFCMToken();
+      console.log("FCM token unregistered");
 
       // Clear auth token
-      await AsyncStorage.removeItem("auth_token");
+      await SecureStore.deleteItemAsync(TOKEN_KEY);
       // Clear user data
       await AsyncStorage.removeItem("user_data");
     } catch (error) {

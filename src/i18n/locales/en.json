@@ -7,12 +7,23 @@
     "password": "Password",
     "forgotPassword": "Forgot Password?",
     "noAccount": "Don't have an account?",
-    "continue": "Sign in to continue"
+    "continue": "Sign in to continue",
+    "createAccount": "Create Account",
+    "registerSubtitle": "Sign up to get started",
+    "fullName": "Full Name",
+    "confirmPassword": "Confirm Password",
+    "haveAccount": "Already have an account?"
+  },
+  "tabs": {
+    "conversations": "Chats",
+    "contacts": "Contacts",
+    "account": "Account"
   },
   "validation": {
     "required": "{{field}} is required",
     "invalidEmail": "Invalid email format",
-    "minLength": "{{field}} must be at least {{min}} characters"
+    "minLength": "{{field}} must be at least {{min}} characters",
+    "passwordMismatch": "Passwords do not match"
   },
   "conversations": {
     "title": "Conversations",

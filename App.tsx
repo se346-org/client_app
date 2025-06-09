@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import ConversationScreen from './src/screens/ConversationScreen';
@@ -19,6 +20,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
+  const { t } = useTranslation();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -46,21 +49,21 @@ const MainTabs = () => {
         name="Conversations" 
         component={ConversationScreen}
         options={{
-          title: 'Chats',
+          title: t('tabs.conversations'),
         }}
       />
       <Tab.Screen 
         name="Contacts" 
         component={ContactScreen}
         options={{
-          title: 'Contacts',
+          title: t('tabs.contacts'),
         }}
       />
       <Tab.Screen 
         name="Account" 
         component={AccountScreen}
         options={{
-          title: 'Account',
+          title: t('tabs.account'),
         }}
       />
     </Tab.Navigator>

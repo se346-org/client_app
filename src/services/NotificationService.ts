@@ -8,8 +8,6 @@ import { Platform } from "react-native";
 import HttpService from "./HttpService";
 import { NavigationService } from "./NavigationService";
 
-const FCM_TOKEN_KEY = "fcm_token";
-
 // Extend PushNotificationObject to include data property
 interface ExtendedPushNotificationObject extends PushNotificationObject {
   data?: {
@@ -20,6 +18,7 @@ interface ExtendedPushNotificationObject extends PushNotificationObject {
 
 export class NotificationService {
   private static instance: NotificationService;
+  private readonly FCM_TOKEN_KEY = "fcm_token";
 
   private constructor() {
     this.configurePushNotification();
@@ -131,7 +130,7 @@ export class NotificationService {
   public async getFCMToken(): Promise<string | null> {
     try {
       // Check if we have a stored token
-      const storedToken = await AsyncStorage.getItem(FCM_TOKEN_KEY);
+      const storedToken = await AsyncStorage.getItem(this.FCM_TOKEN_KEY);
       if (storedToken) {
         return storedToken;
       }
@@ -149,7 +148,7 @@ export class NotificationService {
 
       const token = await messaging().getToken();
       // Store the token
-      await AsyncStorage.setItem(FCM_TOKEN_KEY, token);
+      await AsyncStorage.setItem(this.FCM_TOKEN_KEY, token);
       return token;
     } catch (error) {
       console.error("Error getting FCM token:", error);
@@ -159,7 +158,17 @@ export class NotificationService {
 
   public async registerFCMToken(token: string): Promise<boolean> {
     try {
+      // Check if token is already registered
+      const storedToken = await AsyncStorage.getItem(this.FCM_TOKEN_KEY);
+      if (storedToken === token) {
+        console.log("FCM token already registered");
+        return true;
+      }
+
+      // Register new token
       await HttpService.post("/auth/fcm/token", { token });
+      // Store the new token
+      await AsyncStorage.setItem(this.FCM_TOKEN_KEY, token);
       return true;
     } catch (error) {
       console.error("Error registering FCM token:", error);
@@ -170,15 +179,16 @@ export class NotificationService {
   public async unregisterFCMToken(): Promise<boolean> {
     try {
       // Get stored token
-      const token = await AsyncStorage.getItem(FCM_TOKEN_KEY);
+      const token = await AsyncStorage.getItem(this.FCM_TOKEN_KEY);
       if (!token) {
         console.log("No FCM token found in storage");
         return true; // Consider this a success since there's no token to unregister
       }
 
-      await HttpService.delete(`/fcm/token?fcm_token=${token}`);
+      // Unregister token from server
+      await HttpService.delete(`/auth/fcm/token?fcm_token=${token}`);
       // Remove token from storage
-      await AsyncStorage.removeItem(FCM_TOKEN_KEY);
+      await AsyncStorage.removeItem(this.FCM_TOKEN_KEY);
       return true;
     } catch (error) {
       console.error("Error unregistering FCM token:", error);
