@@ -12,7 +12,9 @@
     "registerSubtitle": "Sign up to get started",
     "fullName": "Full Name",
     "confirmPassword": "Confirm Password",
-    "haveAccount": "Already have an account?"
+    "haveAccount": "Already have an account?",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
   },
   "tabs": {
     "conversations": "Chats",
@@ -64,6 +66,29 @@
     "logout": "Logout",
     "error": {
       "logout": "Failed to logout"
+    }
+  },
+  "conversation": {
+    "menu": {
+      "title": "Conversation Options",
+      "search": "Search",
+      "groupInfo": "Group Info",
+      "viewMembers": "View Members",
+      "muteNotifications": "Mute Notifications",
+      "clearChat": "Clear Chat",
+      "clearChatConfirm": "Are you sure you want to clear all messages? This action cannot be undone.",
+      "leaveGroup": "Leave Group",
+      "leaveGroupConfirm": "Are you sure you want to leave this group?"
+    },
+    "search": {
+      "placeholder": "Search messages..."
+    },
+    "members": {
+      "title": "Group Members"
+    },
+    "error": {
+      "leaveGroup": "Error leaving group",
+      "clearChat": "Error clearing chat"
     }
   }
 } 

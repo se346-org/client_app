@@ -12,7 +12,9 @@
     "registerSubtitle": "Đăng ký để bắt đầu",
     "fullName": "Họ và tên",
     "confirmPassword": "Xác nhận mật khẩu",
-    "haveAccount": "Đã có tài khoản?"
+    "haveAccount": "Đã có tài khoản?",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận"
   },
   "tabs": {
     "conversations": "Trò chuyện",
@@ -64,6 +66,29 @@
     "logout": "Đăng xuất",
     "error": {
       "logout": "Đăng xuất thất bại"
+    }
+  },
+  "conversation": {
+    "menu": {
+      "title": "Tùy chọn cuộc hội thoại",
+      "search": "Tìm kiếm",
+      "groupInfo": "Thông tin nhóm",
+      "viewMembers": "Xem thành viên",
+      "muteNotifications": "Tắt thông báo",
+      "clearChat": "Xóa cuộc hội thoại",
+      "clearChatConfirm": "Bạn có chắc chắn muốn xóa tất cả tin nhắn? Hành động này không thể hoàn tác.",
+      "leaveGroup": "Rời nhóm",
+      "leaveGroupConfirm": "Bạn có chắc chắn muốn rời khỏi nhóm này?"
+    },
+    "search": {
+      "placeholder": "Tìm kiếm tin nhắn..."
+    },
+    "members": {
+      "title": "Thành viên nhóm"
+    },
+    "error": {
+      "leaveGroup": "Lỗi khi rời nhóm",
+      "clearChat": "Lỗi khi xóa cuộc hội thoại"
     }
   }
 } 
