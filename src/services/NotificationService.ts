@@ -160,15 +160,13 @@ export class NotificationService {
     try {
       // Check if token is already registered
       const storedToken = await AsyncStorage.getItem(this.FCM_TOKEN_KEY);
-      if (storedToken === token) {
-        console.log("FCM token already registered");
-        return true;
+      if (storedToken !== token) {
+        await AsyncStorage.setItem(this.FCM_TOKEN_KEY, token);
       }
 
-      // Register new token
       await HttpService.post("/auth/fcm/token", { token });
-      // Store the new token
-      await AsyncStorage.setItem(this.FCM_TOKEN_KEY, token);
+
+      console.log("FCM token registered", token);
       return true;
     } catch (error) {
       console.error("Error registering FCM token:", error);

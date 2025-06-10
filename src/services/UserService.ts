@@ -33,7 +33,12 @@ class UserService {
       console.log("formData", formData);
       return await HttpService.post<UploadAvatarResponse>(
         "/auth/upload",
-        formData
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
     } catch (error) {
       console.error("Error uploading avatar:", error);

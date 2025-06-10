@@ -63,26 +63,6 @@ class ConversationService {
     }
   }
 
-  // async getLastMessages(): Promise<ConversationResponse> {
-  //   try {
-  //     return await HttpService.get<ConversationResponse>(
-  //       "/conversation/last-messages"
-  //     );
-  //   } catch (error) {
-  //     console.error("Error getting last messages:", error);
-  //     throw error;
-  //   }
-  // }
-
-  // async deleteConversation(conversationId: string): Promise<void> {
-  //   try {
-  //     await HttpService.delete(`/conversation/${conversationId}`);
-  //   } catch (error) {
-  //     console.error("Error deleting conversation:", error);
-  //     throw error;
-  //   }
-  // }
-
   async markAsRead(conversationId: string, messageId: string): Promise<void> {
     try {
       await HttpService.post(`/auth/seen-message`, {
